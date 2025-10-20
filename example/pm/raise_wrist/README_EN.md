@@ -1,78 +1,89 @@
-# Raise Wrist to Wake Up Screen Example
-Source path: example/raise_wrist
+# Raise Wrist to Light Up Screen Example
+
+Source code path: example/raise_wrist
 
 ## Supported Platforms
+
 The example can run on the following development boards:
 * sf32lb52-lchspi-ulp
 
 ## Example Overview
-* Time display application: Power on to display default time: 9:30:00, automatically update time display every second
-* Intelligent power management: Automatically enter sleep mode after 10 seconds of inactivity. Wake up by raising wrist, detect raising wrist action through sensors to wake up and light up the screen to continue timing. Turn off screen when putting down wrist, detect putting down wrist action to turn off the screen and enter sleep mode.
-  Inactivity detection: If button is pressed or screen is touched within 10 seconds, it is considered as activity, and the time will be reset to default time.
-* Sensor data processing: Use LSM6DSL sensor (accelerometer + gyroscope), continuously read acceleration data with 200ms sampling period, and realize gesture recognition (raising/putting down wrist detection) through algorithm processing
 
-## Example Usage
+* Time display application: Upon power-on, it displays the default time of 9:30:00 and automatically updates the time display every second.
+* Intelligent power management: Automatically enters sleep mode after 10 seconds of inactivity. When the wrist is raised, the sensor detects this gesture to wake up the device and light up the screen to continue displaying time. When the wrist is lowered, the screen turns off and the device enters sleep mode.
+  Inactivity detection: If a button is pressed or the screen is touched within 10 seconds, it's considered as user activity, and the time will be reset to the default value.
+* Sensor data processing: Uses LSM6DSL sensor (accelerometer + gyroscope), continuously reads acceleration data with a 200ms sampling period, and processes the data through algorithms to implement gesture recognition (wrist raise/lower detection).
+
+## How to Use the Example
 
 ### Hardware Connection
 
-Remove the VCC_3V3_S and VCC_3V3 jumper caps, and use the power consumption test tool to power through VBAT. Refer to the following diagram for specific hardware connection:
+Remove the VBAT_S and VBAT jumper caps, and use a power consumption testing tool to supply power through VBAT. Refer to the following diagram for specific hardware connections:
 ![alt text](assets/connect.png)
 
-### menuconfig Configuration
-* Required configurations are enabled by default
+### Menuconfig Configuration
+
+* Required configurations are enabled by default.
 
 ```c
 menuconfig --board=board_name
 ```
-1. Enable 6-axis sensor
-- Path: Select board peripherals → Sensor → 6D Sensor for Accelerator and Gyro
-    - Enable: LSM6DSL
-        - Macro switch: `CONFIG_ACC_USING_LSM6DSL`
-        - Function: Enable 6-axis sensor
 
-2. Enable lvgl
-- Path: Third party packages
-    - Enable: LittlevGL2RTT: The LittlevGl gui lib adapter RT-Thread
-        - Macro switch: `CONFIG_PKG_USING_LITTLEVGL2RTT`
-        - Function: Use lvgl and select version (default uses v8)
+1. Enable 6-axis sensor
+   - Path: Select board peripherals → Sensor → 6D Sensor for Accelerator and Gyro
+     - Enable: LSM6DSL
+       - Macro switch: `CONFIG_ACC_USING_LSM6DSL`
+       - Purpose: Enable the 6-axis sensor
+
+2. Enable LVGL
+   - Path: Third party packages
+     - Enable: LittlevGL2RTT: The LittlevGl gui lib adapter RT-Thread
+       - Macro switch: `CONFIG_PKG_USING_LITTLEVGL2RTT`
+       - Purpose: Use LVGL and select version (default v8)
 
 3. Enable button
-- Path: Sifli middleware
-    - Enable: Enable button library
-        - Macro switch: `CONFIG_USING_BUTTON_LIB`
-        - Function: Enable button
+   - Path: Sifli middleware
+     - Enable: Enable button library
+       - Macro switch: `CONFIG_USING_BUTTON_LIB`
+       - Purpose: Enable button functionality
 
 4. Enable low power mode
-- Path: Sifli middleware 
-    - Enable: Enable low power support
-        - Macro switch: `CONFIG_BSP_USING_PM`
-        - Function: Enable low power
+   - Path: Sifli middleware
+     - Enable: Enable low power support
+       - Macro switch: `CONFIG_BSP_USING_PM`
+       - Purpose: Enable low power mode
 
-5. Enable output of low power related logs (disabled by default to reduce power consumption. Can be enabled in menuconfig for debugging and verification if needed)
-- Path: SiFli Middleware → Enable Low Power Support
-    - Enable: Enable PM Debug
-    - Macro switch: `CONFIG_BSP_PM_DEBUG`
-    - Function: Output low power related logs
+5. Enable outputting low power related logs (disabled by default to reduce power consumption. Can be manually enabled in menuconfig for debugging)
+   - Path: SiFli Middleware → Enable Low Power Support
+     - Enable: Enable PM Debug
+     - Macro switch: `CONFIG_BSP_PM_DEBUG`
+     - Purpose: Output low power related logs
 
 ### Compilation and Flashing
-#### Compile using sf32lb52-lchspi-ulp_hcpu project code as example
-52 platform default configuration is Deep Sleep mode<br>
-* Compilation:
-    Switch to example project directory and run scons command to compile:
+
+#### Compiling with sf32lb52-lchspi-ulp_hcpu project code as an example
+
+The 52 platform is configured to Deep Sleep mode by default<br>
+
+* Compile:
+  Switch to the example project directory and run the scons command to compile:
 
 > scons --board=sf32lb52-lchspi-ulp -j8
-* Flashing:
-    1. Switch to example `project/build_xx` directory, run `uart_download.bat`, and select port as prompted to download:
-    2. Switch to example project directory and run: build_sf32lb52-lchspi-ulp_hcpu\uart_download.bat
-    
+
+* Flash:
+  1. Switch to the example `project/build_xx` directory, run `uart_download.bat`, and select the port as prompted to download:
+  2. Switch to the example project directory and run: build_sf32lb52-lchspi-ulp_hcpu\uart_download.bat
+
 ```c
- build_sf32lb52-lchspi-ulp_hcpu\uart_download.bat
+build_sf32lb52-lchspi-ulp_hcpu\uart_download.bat
 
- Uart Download
+Uart Download
 
- please input the serial port num:5
+please input the serial port num:5
 ```
+
 ## Example Output Results
+
 ```c
 09-17 19:12:41:285    SFBL
 09-17 19:12:43:345    Serial:c2,Chip:4,Package:3,Rev:3  Reason:00000000
@@ -132,7 +143,7 @@ menuconfig --board=board_name
 09-17 19:12:49:097    cwm_ap_sensorListen called. sensorType=9, index=0, timestamp_ns=0
 09-17 19:12:49:098    watch handup: 1.0000, 1.0000, 1.0000
 09-17 19:12:49:103    set-- gesture:1, counter:1
-09-17 19:12:49:104    >>>抬腕亮屏<<<
+09-17 19:12:49:104    >>>Raise wrist to light up screen<<<
 09-17 19:12:44:178    824 /n
 09-17 19:12:44:695    1340 /n
 09-17 19:12:45:214    1856 /n
@@ -141,7 +152,7 @@ menuconfig --board=board_name
 09-17 19:12:51:549    cwm_ap_sensorListen called. sensorType=9, index=0, timestamp_ns=0
 09-17 19:12:51:551    watch handup: 2.0000, 2.0000, 2.0000
 09-17 19:12:51:552    set-- gesture:2, counter:2
-09-17 19:12:51:553    >>>放腕灭屏<<<
+09-17 19:12:51:553    >>>Lower wrist to turn off screen<<<
 09-17 19:12:51:553    Entering sleep mode...
 09-17 19:12:51:554    [270793] I/drv.lcd lcd_task: Power off
 09-17 19:12:51:559    [270808] I/drv.epic lcd_task: drv_gpu closed.
@@ -164,7 +175,7 @@ menuconfig --board=board_name
 09-17 19:12:53:797    cwm_ap_sensorListen called. sensorType=9, index=0, timestamp_ns=0
 09-17 19:12:53:798    watch handup: 1.0000, 1.0000, 3.0000
 09-17 19:12:53:800    set-- gesture:1, counter:3
-09-17 19:12:53:804    >>>抬腕亮屏<<<
+09-17 19:12:53:804    >>>Raise wrist to light up screen<<<
 09-17 19:12:53:820    Waking up system...
 09-17 19:12:53:820    [344456] I/drv.lcd lcd_task: Power on
 09-17 19:12:53:823    [344472] I/drv.epic lcd_task: drv_gpu opened.
@@ -213,43 +224,52 @@ menuconfig --board=board_name
 09-17 19:13:04:487    [pm]WSR:0x4
 09-17 19:13:04:564    [pm]S:3,697182
 ```
-* Board running phenomenon
+
+* Board operation phenomenon
 ![alt text](assets/wakeup_work.jpg)
+
 * Board phenomenon when entering sleep mode
 ![alt text](assets/enter_pm.jpg)
+
 ## Power Consumption Test Results
-* Assuming a battery capacity of 200mAh as an example, testing was conducted under this condition with light usage (100 wrist raises per day), moderate usage (300 wrist raises per day), and heavy usage (500 wrist raises per day) to simulate users checking the time on a watch.
+
+* Assuming a battery capacity of 200mAh, tests were conducted under various usage scenarios to simulate user behavior of checking time on a smartwatch:
+  - Light usage: 100 wrist raises per day
+  - Moderate usage: 300 wrist raises per day
+  - Heavy usage: 500 wrist raises per day
 
 ### When Screen is On
-* The average power consumption when working or awakened is: 22.6mA
+
+* Average power consumption during active work or wake-up state: 22.6mA
 ![alt text](assets/work.png)
 
-* Power consumption required for one day's work
-    - Light usage: 22.6 * 100 * 10 / 3600 = 6.3(mAh)
-    - Moderate usage: 22.6 * 300 * 10 / 3600 = 18.8(mAh)
-    - Heavy usage: 22.6 * 500 * 10 / 3600 = 31.4(mAh)
+* Daily power consumption for active work:
+  - Light usage: 22.6 * 100 * 10 / 3600 = 6.3(mAh)
+  - Moderate usage: 22.6 * 300 * 10 / 3600 = 18.8(mAh)
+  - Heavy usage: 22.6 * 500 * 10 / 3600 = 31.4(mAh)
 
 ### When Screen is Off
-* The average power consumption after screen off is: 665uA
-    Current breakdown:
-    1. Base current: 50~60uA
-    2. Sensor working current: ~60uA
-    3. Charging chip current: ~30uA
-    4. Current for acquiring data every 200 milliseconds to execute wrist raise algorithm: ~510uA
+
+* Average power consumption in sleep mode: 410uA
+  Current breakdown:
+  1. Base current: 50~60uA
+  2. Sensor working current: ~60uA
+  3. Charging chip current: ~30uA
+  4. Current for data acquisition and wrist detection algorithm every 200ms: ~270uA
 
 ![alt text](assets/pm_mod_sensor.png)
 
 ![alt text](assets/pm_all.png)
 
-* Power consumption for a full day of use
-    - Light usage: 0.665 * (24 * 3600 - 100 * 10) / 3600 + 6.3 = 22.1(mAh)
-    - Moderate usage: 0.665 * (24 * 3600 - 300 * 10) / 3600 + 18.8 = 35.1(mAh)
-    - Heavy usage: 0.665 * (24 * 3600 - 500 * 10) / 3600 + 31.4 = 48.1(mAh)
+* Daily total power consumption:
+  - Light usage: 0.410 * (24 * 3600 - 100 * 10) / 3600 + 6.3 = 16.0(mAh)
+  - Moderate usage: 0.410 * (24 * 3600 - 300 * 10) / 3600 + 18.8 = 28.3(mAh)
+  - Heavy usage: 0.410 * (24 * 3600 - 500 * 10) / 3600 + 31.4 = 40.7(mAh)
 
-* Data Summary
+### Data Summary
 
-|          |Wake-up Work    |Screen-off Sleep      |Daily Consumption      |Usable Days |
-|:---      |:---        |:---          |:---           |:---         |
-|100 times/day|6.3mAh      |15.8mAh       |22.1mAh        |9.0 days        |
-|300 times/day|18.8mAh     |16.3mAh       |35.1mAh        |5.7 days        |
-|500 times/day|31.4mAh     |16.7mAh       |48.1mAh        |4.2 days        |
+|          | Active Work    | Sleep Mode      | Daily Total      | Battery Life |
+|:---      |:---            |:---             |:---              |:---          |
+|100 times/day|6.3mAh         |9.7mAh          |16.0mAh           |12.5 days     |
+|300 times/day|18.8mAh        |9.5mAh          |28.3mAh           |7.1 days      |
+|500 times/day|31.4mAh        |9.3mAh          |40.7mAh           |4.9 days      |
