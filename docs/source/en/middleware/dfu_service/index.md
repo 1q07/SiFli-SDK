@@ -4,11 +4,18 @@ Device Firmware Update (DFU) is the process of downloading target firmware to a 
 
 SIFLI firmware upgrade service supports downloading three types of content by default: firmware, resources, and fonts. Among these, firmware is first downloaded as a compressed upgrade package to a reserved area, then installed and overwritten after download completion; resources and fonts are directly overwritten after download.
 
-The firmware upgrade service is divided into 2 parts:
+## DFU firmware upgrade service
 ```{toctree}
 :titlesonly:
 
 firmware_flow.md
 firmware_generation.md
+```
 
+## DFU_PAN Firmware Upgrade Service
+```{toctree}
+:titlesonly:
+
+dfu_pan_firmware_generation.md
+```
 ```

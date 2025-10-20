@@ -4,11 +4,18 @@
 
 SIFLI固件升级服务默认支持固件、资源和字体三种内容的下载，其中固件先下载压缩的升级包到预留区域，下载完成后再安装覆盖；资源和字体下载后直接覆盖。
 
-固件升级服务分为2个部分：
+## DFU固件升级服务
 ```{toctree}
 :titlesonly:
 
 firmware_flow.md
 firmware_generation.md
+```
 
+## DFU_PAN固件升级服务
+```{toctree}
+:titlesonly:
+
+dfu_pan_firmware_generation.md
+```
 ```
