@@ -9,6 +9,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tomllib
 from typing import Any
 from typing import Dict
 from typing import List
@@ -17,6 +18,8 @@ from urllib.error import URLError
 from urllib.request import Request
 from urllib.request import urlopen
 from webbrowser import open_new_tab
+
+import tomli_w
 
 import click
 from click.core import Context
@@ -39,15 +42,90 @@ from sdk_py_actions.tools import yellow_print
 
 def action_extensions(base_actions: Dict, project_path: str) -> Any:
 
+    def read_project_config(project_dir: str) -> Dict[str, Optional[str]]:
+        """Read project configuration from .project.toml file."""
+        config_path = os.path.join(project_dir, '.project.toml')
+        config = {
+            'board': None,
+            'board_search_path': None
+        }
+        
+        if not os.path.exists(config_path):
+            return config
+        
+        try:
+            with open(config_path, 'rb') as f:
+                data = tomllib.load(f)
+                config['board'] = data.get('board')
+                config['board_search_path'] = data.get('board_search_path')
+        except Exception as e:
+            print_warning(f'Warning: Failed to read .project.toml: {e}')
+        
+        return config
+
+    def write_project_config(project_dir: str, board: Optional[str], board_search_path: Optional[str]) -> None:
+        """Write project configuration to .project.toml file."""
+        config_path = os.path.join(project_dir, '.project.toml')
+        
+        # Read existing config
+        config = {}
+        if os.path.exists(config_path):
+            try:
+                with open(config_path, 'rb') as f:
+                    config = tomllib.load(f)
+            except Exception:
+                pass
+        
+        # Update config
+        if board is not None:
+            config['board'] = board
+        if board_search_path is not None:
+            config['board_search_path'] = board_search_path
+        
+        # Write config
+        try:
+            with open(config_path, 'wb') as f:
+                tomli_w.dump(config, f)
+            print(f'Project configuration saved to {config_path}')
+        except Exception as e:
+            raise FatalError(f'Failed to write .project.toml: {e}')
+
+    def set_target(target_name: str, ctx: Context, args: PropertyDict, board: str, board_search_path: Optional[str]) -> None:
+        """
+        Set target board configuration and save to .project.toml file.
+        """
+        project_dir = args.project_dir
+        
+        if not board:
+            raise FatalError('Board name is required. Usage: sdk.py set-target <board> [--board_search_path <path>]')
+        
+        write_project_config(project_dir, board, board_search_path)
+        
+        print(f'Target board set to: {board}')
+        if board_search_path:
+            print(f'Board search path set to: {board_search_path}')
+
     def menuconfig(target_name: str, ctx: Context, args: PropertyDict, board: Optional[str], board_search_path: Optional[str]) -> None:
         """
         Menuconfig target is build_target extended with the style argument for setting the value for the environment
         variable.
         """
+        project_dir = args.project_dir
+        
+        # Try to read from .project.toml if options are not provided
+        if board is None or board_search_path is None:
+            config = read_project_config(project_dir)
+            if board is None and config['board']:
+                board = config['board']
+                print(f'Using board from .project.toml: {board}')
+            if board_search_path is None and config['board_search_path']:
+                board_search_path = config['board_search_path']
+                print(f'Using board_search_path from .project.toml: {board_search_path}')
+        
         menuconfig_path = os.path.join(os.environ['SIFLI_SDK_PATH'], 'tools', 'kconfig', 'menuconfig.py')
-        board = ['--board', board] if board else []
-        board_search_path = ['--board_search_path', board_search_path] if board_search_path else []
-        subprocess.run([sys.executable, menuconfig_path] + board + board_search_path)
+        board_arg = ['--board', board] if board else []
+        board_search_path_arg = ['--board_search_path', board_search_path] if board_search_path else []
+        subprocess.run([sys.executable, menuconfig_path] + board_arg + board_search_path_arg)
 
     def verbose_callback(ctx: Context, param: List, value: str) -> Optional[str]:
         if not value or ctx.resilient_parsing:
@@ -140,6 +218,23 @@ def action_extensions(base_actions: Dict, project_path: str) -> Any:
 
     build_actions = {
         'actions': {
+            'set-target': {
+                'callback': set_target,
+                'help': 'Set target board configuration and save to .project.toml file.',
+                'arguments': [
+                    {
+                        'names': ['board'],
+                        'required': True,
+                    },
+                ],
+                'options': global_options + [
+                    {
+                        'names': ['--board_search_path'],
+                        'help': 'Board search path',
+                        'default': None,
+                    },
+                ],
+            },
             'menuconfig': {
                 'callback': menuconfig,
                 'help': 'Run "menuconfig" project configuration tool.',

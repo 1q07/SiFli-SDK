@@ -14,3 +14,4 @@ Kconfig.tmp
 .venv
 _*/
 **/packages/
+.project.toml
