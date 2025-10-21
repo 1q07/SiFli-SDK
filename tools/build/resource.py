@@ -1719,6 +1719,34 @@ def BuildJLinkLoadScript(main_env):
     f.write(s)
     f.close()
 
+    # Generate download.sh for Linux/macOS
+    InitIndentation()
+    s = MakeLine('#!/bin/bash')
+    s += MakeLine('')
+    s += MakeLine('WORK_PATH="$(cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd)"')
+    s += MakeLine('CURR_PATH="$(pwd)"')
+    s += MakeLine('cd "$WORK_PATH"')
+    s += MakeLine('')
+    temp = 'JLinkExe'
+    # DIF:devices interface
+    if 'DIF' in main_env:
+        temp += ' -ip 127.0.0.1:19025 -device {}'.format(main_env['JLINK_DEVICE'])
+    else:
+        if 'JLINK_DEVICE' in main_env:
+            temp += ' -device {}'.format(main_env['JLINK_DEVICE'])
+        else:
+            temp += ' -device ?'
+    temp += ' -CommandFile download.jlink'
+    s += MakeLine(temp)
+    s += MakeLine('')
+    s += MakeLine('cd "$CURR_PATH"')
+    sh_path = os.path.join(main_env['build_dir'], 'download.sh')
+    f = open(sh_path, 'w')
+    f.write(s)
+    f.close()
+    # Make the script executable
+    os.chmod(sh_path, 0o755)
+
     decice_memory = main_env['JLINK_DEVICE'].split('_')
     device = decice_memory[0][:-1]
     memory = decice_memory[1] if len(decice_memory) > 1 else 'NOR'
