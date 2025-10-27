@@ -168,7 +168,7 @@ int dfs_ramfs_write(struct dfs_fd *fd, const void *buf, size_t count)
         {
             rt_set_errno(-ENOMEM);
 
-            return 0;
+            return -ENOMEM;
         }
 
         /* update dirent and file size */
