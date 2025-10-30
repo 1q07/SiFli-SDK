@@ -85,7 +85,9 @@
 #define CARD_TRY_TIMES                      3000
 #define CARD_TRY_TIMES_ACMD41               800
 #define CARD_WAIT_TOKEN_TIMES               800
-#define CARD_MAX_HZ                         1000 * 1000 * 12
+#define MHZ(x)                   ((x##UL) * 1000000UL)
+#define CARD_MAX_HZ              MHZ        (48)   /* "Max": controller physical limit, 48MHz */
+#define CARD_SAFE_HZ             MHZ        (12)   /* "Safe": fallback frequency, 12MHz */
 
 
 #define MSD_USE_PRE_ERASED                              /**< id define MSD_USE_PRE_ERASED, before CMD25, send ACMD23 */

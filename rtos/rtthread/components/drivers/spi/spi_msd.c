@@ -109,10 +109,11 @@ static uint8_t ones_data[512] =
 /* function define */
 static rt_bool_t rt_tick_timeout(rt_tick_t tick_start, rt_tick_t tick_long);
 
-static rt_err_t MSD_take_owner(struct rt_spi_device *spi_device);
+static rt_err_t  MSD_take_owner(struct rt_spi_device *spi_device);
 
-static rt_err_t _wait_token(struct rt_spi_device *device, uint8_t token);
-static rt_err_t _wait_ready(struct rt_spi_device *device);
+static rt_err_t  _wait_token(struct rt_spi_device *device, uint8_t token);
+static rt_err_t  _wait_ready(struct rt_spi_device *device);
+static uint32_t  csd_trans_speed_to_hz(uint8_t ts);
 static rt_err_t  rt_msd_init(rt_device_t dev);
 static rt_err_t  rt_msd_open(rt_device_t dev, rt_uint16_t oflag);
 static rt_err_t  rt_msd_close(rt_device_t dev);
@@ -120,7 +121,7 @@ static rt_size_t rt_msd_write(rt_device_t dev, rt_off_t pos, const void *buffer,
 static rt_size_t rt_msd_read(rt_device_t dev, rt_off_t pos, void *buffer, rt_size_t size);
 static rt_size_t rt_msd_sdhc_read(rt_device_t dev, rt_off_t pos, void *buffer, rt_size_t size);
 static rt_size_t rt_msd_sdhc_write(rt_device_t dev, rt_off_t pos, const void *buffer, rt_size_t size);
-static rt_err_t rt_msd_control(rt_device_t dev, int cmd, void *args);
+static rt_err_t  rt_msd_control(rt_device_t dev, int cmd, void *args);
 
 /*low power manager*/
 #ifdef MSD_SPI_FORCE_IDLE
@@ -554,6 +555,28 @@ const static struct rt_device_ops msd_sdhc_ops =
 };
 #endif
 
+/* Parse TRAN_SPEED (CSD[103:96]) to Hz */
+static inline uint32_t csd_trans_speed_to_hz(uint8_t ts)
+{
+    /* unit: 0=100k, 1=1M, 2=10M, 3=100M */
+    static const uint32_t s_unit_hz[4] = {100000u, 1000000u, 10000000u, 100000000u};
+
+    /* time value * 10: index 0 invalid; 1..15 -> 1.0,1.2,...,8.0 */
+    static const uint8_t s_timevalue_x10[16] =
+    { 0, 10, 12, 13, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 70, 80 };
+
+    const uint8_t unit_code =  ts        & 0x07u;  /* [2:0] */
+    const uint8_t tv_code   = (ts >> 3)  & 0x0Fu;  /* [6:3] */
+
+    if (unit_code >= 4u || tv_code == 0u)
+        return 0u;
+
+    const uint32_t unit_hz = s_unit_hz[unit_code];
+    const uint32_t tv_x10  = (uint32_t)s_timevalue_x10[tv_code];
+
+    return (unit_hz / 10u) * tv_x10;
+}
+
 /* RT-Thread Device Driver Interface */
 static rt_err_t rt_msd_init(rt_device_t dev)
 {
@@ -562,6 +585,7 @@ static rt_err_t rt_msd_init(rt_device_t dev)
     rt_err_t result = RT_EOK;
     rt_tick_t tick_start;
     uint32_t OCR;
+    uint32_t CARD_AUTO_HZ_runtime = CARD_SAFE_HZ;
 
     if (msd->spi_device == RT_NULL)
     {
@@ -940,7 +964,7 @@ static rt_err_t rt_msd_init(rt_device_t dev)
                 {
                     rt_spi_release(msd->spi_device);
                     MSD_DEBUG("[info] Not SD card4 , response : 0x%02X\r\n", response[0]);
-//                    break;
+                    //break;
                 }
             }
             while (response[0] != MSD_RESPONSE_NO_ERROR);
@@ -1049,7 +1073,7 @@ static rt_err_t rt_msd_init(rt_device_t dev)
         uint8_t CSD_buffer[MSD_CSD_LEN];
 
         rt_spi_take(msd->spi_device);
-//        result = _send_cmd(msd->spi_device, SEND_CSD, 0x00, 0xAF, response_r1, response);
+        //result = _send_cmd(msd->spi_device, SEND_CSD, 0x00, 0xAF, response_r1, response);
         result = _send_cmd(msd->spi_device, SEND_CSD, 0x00, 0x00, response_r1, response);
 
         if (result != RT_EOK)
@@ -1183,22 +1207,6 @@ static rt_err_t rt_msd_init(rt_device_t dev)
 
                     MSD_DEBUG("[info] CSD Version 1.0\r\n");
 
-                    /* get TRAN_SPEED 8bit [103:96] */
-                    tmp8 = CSD_buffer[3];
-                    if (tmp8 == 0x32)
-                    {
-                        msd->max_clock = 1000 * 1000 * 10; /* 10Mbit/s. */
-                    }
-                    else if (tmp8 == 0x5A)
-                    {
-                        msd->max_clock = 1000 * 1000 * 50; /* 50Mbit/s. */
-                    }
-                    else
-                    {
-                        msd->max_clock = 1000 * 1000 * 1; /* 1Mbit/s default. */
-                    }
-                    MSD_DEBUG("[info] TRAN_SPEED: 0x%02X, %dMbit/s.\r\n", tmp8, msd->max_clock / 1000 / 1000);
-
                     /* get READ_BL_LEN 4bit [83:80] */
                     tmp8 = CSD_buffer[5] & 0x0F; /* 0b00001111; */
                     READ_BL_LEN = tmp8;          /* 4 bit */
@@ -1209,16 +1217,14 @@ static rt_err_t rt_msd_init(rt_device_t dev)
                     tmp16 = tmp16 << 8;
                     tmp16 += CSD_buffer[7];       /* get [71:64] */
                     tmp16 = tmp16 << 2;
-                    tmp8 = CSD_buffer[8] & 0xC0;  /* get [63:62] 0b11000000 */
-                    tmp8 = tmp8 >> 6;
+                    tmp8  = (CSD_buffer[8] & 0xC0) >> 6;  /* get [63:62] */
                     tmp16 = tmp16 + tmp8;
-                    C_SIZE = tmp16;             //12 bit
+                    C_SIZE = tmp16;             // 12 bit
                     MSD_DEBUG("[info] CSD : C_SIZE : %d\r\n", C_SIZE);
 
                     /* get C_SIZE_MULT 3bit [49:47] */
-                    tmp8 = CSD_buffer[9] & 0x03;//0b00000011;
-                    tmp8 = tmp8 << 1;
-                    tmp8 = tmp8 + ((CSD_buffer[10] & 0x80/*0b10000000*/) >> 7);
+                    tmp8 = (uint8_t)((CSD_buffer[9] & 0x03) << 1);
+                    tmp8 = (uint8_t)(tmp8 + ((CSD_buffer[10] & 0x80) >> 7));
                     C_SIZE_MULT = tmp8;         // 3 bit
                     MSD_DEBUG("[info] CSD : C_SIZE_MULT : %d\r\n", C_SIZE_MULT);
 
@@ -1226,7 +1232,7 @@ static rt_err_t rt_msd_init(rt_device_t dev)
                     /* BLOCKNR = (C_SIZE+1) * MULT */
                     /* MULT = 2^(C_SIZE_MULT+2) */
                     /* BLOCK_LEN = 2^READ_BL_LEN */
-                    card_capacity = (1 << READ_BL_LEN) * ((C_SIZE + 1) * (1 << (C_SIZE_MULT + 2)));
+                    card_capacity = (1u << READ_BL_LEN) * ((C_SIZE + 1u) * (1u << (C_SIZE_MULT + 2u)));
                     msd->geometry.sector_count = card_capacity / msd->geometry.bytes_per_sector;
                     MSD_DEBUG("[info] card capacity : %d Mbyte\r\n", card_capacity / (1024 * 1024));
                 }
@@ -1234,46 +1240,18 @@ static rt_err_t rt_msd_init(rt_device_t dev)
                 {
                     MSD_DEBUG("[info] CSD Version 2.0\r\n");
 
-                    /* get TRAN_SPEED 8bit [103:96] */
-                    tmp8 = CSD_buffer[3];
-                    if (tmp8 == 0x32)
-                    {
-                        msd->max_clock = 1000 * 1000 * 10; /* 10Mbit/s. */
-                    }
-                    else if (tmp8 == 0x5A)
-                    {
-                        msd->max_clock = 1000 * 1000 * 50; /* 50Mbit/s. */
-                    }
-                    else if (tmp8 == 0x0B)
-                    {
-                        msd->max_clock = 1000 * 1000 * 100; /* 100Mbit/s. */
-                        /* UHS50 Card sets TRAN_SPEED to 0Bh (100Mbit/sec), */
-                        /* for both SDR50 and DDR50 modes. */
-                    }
-                    else if (tmp8 == 0x2B)
-                    {
-                        msd->max_clock = 1000 * 1000 * 200; /* 200Mbit/s. */
-                        /* UHS104 Card sets TRAN_SPEED to 2Bh (200Mbit/sec). */
-                    }
-                    else
-                    {
-                        msd->max_clock = 1000 * 1000 * 1; /* 1Mbit/s default. */
-                    }
-                    MSD_DEBUG("[info] TRAN_SPEED: 0x%02X, %dMbit/s.\r\n", tmp8, msd->max_clock / 1000 / 1000);
-
                     /* get C_SIZE 22bit [69:48] */
-                    tmp32 = CSD_buffer[7] & 0x3F; /* 0b00111111 */
-                    tmp32 = tmp32 << 8;
-                    tmp32 += CSD_buffer[8];
-                    tmp32 = tmp32 << 8;
-                    tmp32 += CSD_buffer[9];
+                    tmp32  = (CSD_buffer[7] & 0x3F); /* 0b00111111 */
+                    tmp32  = (tmp32 << 8) | CSD_buffer[8];
+                    tmp32  = (tmp32 << 8) | CSD_buffer[9];
                     C_SIZE = tmp32;
                     MSD_DEBUG("[info] CSD : C_SIZE : %d\r\n", C_SIZE);
 
                     /* memory capacity = (C_SIZE+1) * 512K byte */
-                    card_capacity = (C_SIZE + 1) / 2; /* unit : Mbyte */
-                    msd->geometry.sector_count = (C_SIZE + 1) * 1024; /* 512KB = 1024sector */
-                    MSD_DEBUG("[info] card capacity : %d.%d Gbyte\r\n", card_capacity / 1024, (card_capacity % 1024) * 100 / 1024);
+                    card_capacity = (C_SIZE + 1u) / 2u; /* unit : Mbyte */
+                    msd->geometry.sector_count = (C_SIZE + 1u) * 1024u; /* 512KB = 1024sector */
+                    MSD_DEBUG("[info] card capacity : %d.%d Gbyte\r\n",
+                              card_capacity / 1024, (card_capacity % 1024) * 100 / 1024);
                     MSD_DEBUG("[info] sector_count : %d\r\n", msd->geometry.sector_count);
                 }
                 else
@@ -1282,9 +1260,32 @@ static rt_err_t rt_msd_init(rt_device_t dev)
                     result = RT_ERROR;
                     goto _exit;
                 }
-            } /* SD CSD Analyze. */
-        } /* Analyze CSD */
 
+                /*
+                Parse TRAN_SPEED (CSD[103:96]):
+                TRAN_SPEED = TimeValue(bits 6:3) × Unit(bits 2:0).
+                If invalid, fall back to CARD_SAFE_HZ.
+                */
+
+                {
+                    uint8_t  ts          = CSD_buffer[3];
+                    uint32_t card_cap_hz = csd_trans_speed_to_hz(ts);
+                    if (!card_cap_hz)
+                    {
+                        MSD_DEBUG("[warn] TRAN_SPEED invalid=0x%02X, fallback %lu Hz\r\n",
+                                  ts, (unsigned long)CARD_SAFE_HZ);
+                        card_cap_hz = CARD_SAFE_HZ;
+                    }
+                    else
+                    {
+                        MSD_DEBUG("[info] TRAN_SPEED=0x%02X -> card_cap_hz=%lu Hz\r\n",
+                                  ts, (unsigned long)card_cap_hz);
+                    }
+
+                    CARD_AUTO_HZ_runtime = (card_cap_hz < CARD_MAX_HZ) ? card_cap_hz : CARD_MAX_HZ;
+                }
+            } /* SD CSD Analyze. */
+        }
     } /* read CSD */
 #if 1 //Temporarily adopting a fixed frequency method
     /* config spi */
@@ -1292,7 +1293,7 @@ static rt_err_t rt_msd_init(rt_device_t dev)
         struct rt_spi_configuration cfg_d;
         cfg_d.data_width = 8;
         cfg_d.mode = RT_SPI_MASTER | RT_SPI_MODE_3 | RT_SPI_MSB; /* SPI Compatible Modes 0 */
-        cfg_d.max_hz = CARD_MAX_HZ; /* 12MHzbit/s */ //msd->max_clock
+        cfg_d.max_hz = CARD_AUTO_HZ_runtime;    /* Use CARD_AUTO_HZ_runtime */
         cfg_d.frameMode = RT_SPI_MOTO;
         rt_spi_configure(msd->spi_device, &cfg_d);
     } /* config spi */
