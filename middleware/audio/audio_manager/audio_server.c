@@ -48,7 +48,11 @@
 
 #include "bf0_hal_audprc.h"
 #include "drv_audprc.h"
-#include "drv_i2s.h"
+
+#ifdef BSP_ENABLE_I2S_CODEC
+    #include "drv_i2s_audio.h"
+#endif
+
 
 /* ---------------------audio server config start-------------------------- */
 
@@ -114,7 +118,7 @@ static void audio_data_stop(void);
 
 static audio_device_e current_audio_device;
 static uint8_t current_play_status;
-static uint8_t g_tws_volume = 15;
+static uint8_t g_tws_volume = AUDIO_MAX_VOLUME;
 static uint8_t g_tws_volume_relative;
 #define g_hardware_mix_enable    0 //mix is left + right, make big volume
 
@@ -318,7 +322,7 @@ typedef struct
     struct rt_mutex     mutex;
     rt_slist_t          command_slist;
     rt_list_t           suspend_client_list;
-    uint8_t             volume;//0~15
+    uint8_t             volume;//0~AUDIO_MAX_VOLUME
     uint8_t             private_volume[AUDIO_TYPE_NUMBER];
     uint8_t             is_bt_3a;
     uint8_t             is_bt_music_working;
@@ -675,12 +679,12 @@ static void inline speaker_update_volume(audio_device_speaker_t *my, int16_t spf
         return;
     }
 
-    if (vol == 15)
+    if (vol == AUDIO_MAX_VOLUME)
     {
         if (audio_type == AUDIO_TYPE_BT_VOICE)
-            decrease_level = eq_get_decrease_level(1, eq_get_tel_volumex2(15));
+            decrease_level = eq_get_decrease_level(1, eq_get_tel_volumex2(AUDIO_MAX_VOLUME));
         else
-            decrease_level = eq_get_decrease_level(1, eq_get_music_volumex2(15));
+            decrease_level = eq_get_decrease_level(1, eq_get_music_volumex2(AUDIO_MAX_VOLUME));
 
         if (decrease_level == 0)
             return;
@@ -3784,8 +3788,8 @@ static inline void ble_sink_adjust_pll(struct rt_ringbuffer *rb)
 
 AUDIO_API void audio_set_tws_volume(uint8_t volume)
 {
-    if (volume > 15)
-        volume = 15;
+    if (volume > AUDIO_MAX_VOLUME)
+        volume = AUDIO_MAX_VOLUME;
     g_tws_volume = volume;
 }
 
@@ -3871,7 +3875,7 @@ put_raw:
         uint32_t samples = data_len >> 1;
         for (uint32_t i = 0; i < samples; i++)
         {
-            p[i] = p[i] >> (15 - g_tws_volume);
+            p[i] = p[i] >> (AUDIO_MAX_VOLUME - g_tws_volume);
         }
     }
 
@@ -4106,8 +4110,8 @@ int audio_server_select_private_audio_device(audio_type_t audio_type, audio_devi
 int audio_server_set_public_volume(uint8_t volume)
 {
     LOG_I("public volume=%d", volume);
-    if (volume > 15)
-        volume = 15;
+    if (volume > AUDIO_MAX_VOLUME)
+        volume = AUDIO_MAX_VOLUME;
     if (g_server.is_server_inited)
     {
         g_server.volume = volume;
@@ -4118,8 +4122,8 @@ int audio_server_set_public_volume(uint8_t volume)
 int audio_server_set_private_volume(audio_type_t audio_type, uint8_t volume)
 {
     LOG_I("private volume[%d]=%d", audio_type, volume);
-    if (volume > 15)
-        volume = 15;
+    if (volume > AUDIO_MAX_VOLUME)
+        volume = AUDIO_MAX_VOLUME;
     if (g_server.is_server_inited && audio_type < AUDIO_TYPE_NUMBER)
     {
         g_server.private_volume[audio_type] = volume;
@@ -4171,77 +4175,9 @@ uint8_t audio_server_get_max_volume(void)
 
 uint8_t a2dp_set_speaker_volume(uint8_t volume)
 {
-    uint8_t new_vol;
     audio_server_t *server = get_server();
-
-    if (volume == 0)
-    {
-        new_vol = 0;
-    }
-    else if (volume == 0x7F)
-    {
-        new_vol = 15;
-    }
-    else if (volume < 9)
-    {
-        new_vol = 1;
-    }
-    else if (volume < 17)
-    {
-        new_vol = 2;
-    }
-    else if (volume < 26)
-    {
-        new_vol = 3;
-    }
-    else if (volume < 35)
-    {
-        new_vol = 4;
-    }
-    else if (volume < 44)
-    {
-        new_vol = 5;
-    }
-    else if (volume < 53)
-    {
-        new_vol = 6;
-    }
-    else if (volume < 62)
-    {
-        new_vol = 7;
-    }
-    else if (volume < 71)
-    {
-        new_vol = 8;
-    }
-    else if (volume < 80)
-    {
-        new_vol = 9;
-    }
-    else if (volume < 88)
-    {
-        new_vol = 10;
-    }
-    else if (volume < 97)
-    {
-        new_vol = 11;
-    }
-    else if (volume < 105)
-    {
-        new_vol = 12;
-    }
-    else if (volume < 113)
-    {
-        new_vol = 13;
-    }
-    else //if (volume < 121)
-    {
-        new_vol = 14;
-    }
-
-    LOG_I("a2dp set speaker volume: %d-->%d\n", volume, new_vol);
-    server->private_volume[AUDIO_TYPE_BT_MUSIC] = new_vol;
-    return new_vol;
+    server->private_volume[AUDIO_TYPE_BT_MUSIC] = volume;
+    return volume;
 }
 
 /*
@@ -4258,13 +4194,14 @@ void set_speaker_volume(uint8_t volume)
     else
     {
         new_vol = volume;
-        if (new_vol > 15)
-            new_vol = 15;
+        if (new_vol > AUDIO_MAX_VOLUME)
+            new_vol = AUDIO_MAX_VOLUME;
     }
 
     LOG_I("set speaker volume: %d-->%d\n", volume, new_vol);
     g_server.private_volume[AUDIO_TYPE_BT_VOICE] = new_vol;
 }
+
 int audio_server_register_audio_device(audio_device_e device_type, const struct audio_device *p_audio_device)
 {
     audio_device_ctrl_t *dev;

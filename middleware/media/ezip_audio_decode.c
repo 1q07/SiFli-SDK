@@ -111,6 +111,7 @@ ezip_audio_packet_t *ezip_audio_read_packet(ffmpeg_handle thiz, uint32_t size, u
             thiz->cfg.mem_free(p->buf);
         }
         p->buf = thiz->cfg.mem_malloc(size);
+        RT_ASSERT(p->buf);
         p->buf_size = size;
     }
     //LOG_I("empty size=%d size=%d paddings=%d", p->buf_size, size, paddings);
