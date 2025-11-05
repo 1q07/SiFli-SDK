@@ -237,29 +237,7 @@ void ezip_audio_decode(ffmpeg_handle thiz, audio_server_callback_func callback, 
                 arg.write_channnel_num = thiz->audio_channel < 2 ? 1 : 2;
                 arg.write_cache_size = EZIP_AUDIO_CACHE_SIZE;
                 thiz->audio_data_period = thiz->audio_data_size / (thiz->audio_samplerate * arg.write_channnel_num * (arg.write_bits_per_sample >> 3) / 1000);
-#if !TWS_MIX_ENABLE
-                if (audio_device_is_a2dp_sink())
-                {
-                    arg.write_channnel_num = 2;
-                    arg.write_samplerate = 44100;
-                    if (arg.write_samplerate != thiz->audio_samplerate)
-                    {
-                        thiz->resample = sifli_resample_open(2, thiz->audio_samplerate, arg.write_samplerate);
-                        RT_ASSERT(thiz->resample);
-                    }
-                    if (thiz->audio_stereo)
-                    {
-                        thiz->cfg.mem_free(thiz->audio_stereo);
-                        thiz->audio_stereo = NULL;
-                    }
-                    if (thiz->audio_channel != 2)
-                    {
-                        thiz->audio_stereo = (uint16_t *)thiz->cfg.mem_malloc(thiz->audio_data_size * 2);
-                        RT_ASSERT(thiz->audio_stereo);
-                    }
-                    LOG_I("resample ch=%d, s=%d", thiz->audio_channel, thiz->audio_samplerate);
-                }
-#endif
+
                 LOG_I("audio_frame_size=%d, sr=%d", thiz->audio_data_size, thiz->audio_samplerate);
                 LOG_I("audio_data_period=%d", thiz->audio_data_period);
                 thiz->audio_handle = audio_open(AUDIO_TYPE_LOCAL_MUSIC, AUDIO_TX, &arg, callback, thiz);
