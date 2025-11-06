@@ -340,7 +340,7 @@
 // #define MEMP_NUM_TCPIP_MSG_INPKT    16
 
 #ifdef RT_LWIP_ETHTHREAD_MBOX_SIZE
-#define MEMP_NUM_TCPIP_MSG_INPKT    RT_LWIP_ETHTHREAD_MBOX_SIZE
+    #define MEMP_NUM_TCPIP_MSG_INPKT    RT_LWIP_ETHTHREAD_MBOX_SIZE
 #endif
 
 /* ---------- Pbuf options ---------- */
@@ -674,5 +674,22 @@
      */
     #define LWIP_HOOK_UNKNOWN_ETH_PROTOCOL lwip_hook_unknown_eth_protocol
 #endif /* RT_LWIP_ENABLE_USER_HOOKS */
+
+/**
+ * LWIP_NETIF_EXT_STATUS_CALLBACK==1: Support an extended callback function
+ * for several netif related event that supports multiple subscribers.
+ * @see netif_ext_status_callback
+ */
+#if !defined LWIP_NETIF_EXT_STATUS_CALLBACK || defined __DOXYGEN__
+    #define LWIP_NETIF_EXT_STATUS_CALLBACK  1
+#endif
+
+/**
+ * LWIP_NUM_NETIF_CLIENT_DATA: Number of clients that may store
+ * data in client_data member array of struct netif (max. 256).
+ */
+#if !defined LWIP_NUM_NETIF_CLIENT_DATA || defined __DOXYGEN__
+    #define LWIP_NUM_NETIF_CLIENT_DATA      2
+#endif
 
 #endif /* __LWIPOPTS_H__ */
