@@ -863,11 +863,8 @@ no_fils:
             MAC2STR(params.bssid), wpa_ssid_txt(params.ssid, params.ssid_len), params.freq);
 
     eapol_sm_notify_portValid(wpa_s->eapol, false);
-    rt_kprintf("%s %d\n", __func__, __LINE__);
     wpa_clear_keys(wpa_s, bss->bssid);
-    rt_kprintf("%s %d\n", __func__, __LINE__);
     wpa_supplicant_set_state(wpa_s, WPA_AUTHENTICATING);
-    rt_kprintf("%s %d\n", __func__, __LINE__);
     if (old_ssid != wpa_s->current_ssid)
         wpas_notify_network_changed(wpa_s);
 
@@ -909,7 +906,6 @@ no_fils:
     }
 
     wpa_s->sme.auth_alg = params.auth_alg;
-    rt_kprintf("%s %d\n", __func__, __LINE__);
     if (wpa_drv_authenticate(wpa_s, &params) < 0)
     {
         wpa_msg(wpa_s, MSG_INFO,
@@ -921,9 +917,7 @@ no_fils:
         wpas_connect_work_done(wpa_s);
         return;
     }
-rt_kprintf("%s %d\n", __func__, __LINE__);
     eloop_register_timeout(SME_AUTH_TIMEOUT, 0, sme_auth_timer, wpa_s, NULL);
-rt_kprintf("%s %d\n", __func__, __LINE__);
     /*
      * Association will be started based on the authentication event from
      * the driver.
@@ -1537,7 +1531,6 @@ void sme_event_auth(struct wpa_supplicant *wpa_s, union wpa_event_data *data)
     eloop_cancel_timeout(sme_auth_timer, wpa_s, NULL);//取消认证超时定时器
 
 #ifdef CONFIG_SAE
-rt_kprintf("%s %d auth_type=%d\n", __func__, __LINE__,data->auth.auth_type);
     if (data->auth.auth_type == WLAN_AUTH_SAE)
     {
         int res;
@@ -1556,7 +1549,6 @@ rt_kprintf("%s %d auth_type=%d\n", __func__, __LINE__,data->auth.auth_type);
             return;
     }
 #endif /* CONFIG_SAE */
-rt_kprintf("%s %d status_code=%d\n", __func__, __LINE__,data->auth.status_code);
     if (data->auth.status_code != WLAN_STATUS_SUCCESS)
     {
         //认证失败
@@ -1590,7 +1582,7 @@ rt_kprintf("%s %d status_code=%d\n", __func__, __LINE__,data->auth.status_code);
         }
 
         wpas_connect_work_done(wpa_s);
-rt_kprintf("%s %d auth_type=%d\n", __func__, __LINE__,data->auth.auth_type);
+        rt_kprintf("%s %d auth_type=%d\n", __func__, __LINE__,data->auth.auth_type);
         /* Try to use a different authentication algorithm */
         switch (data->auth.auth_type)
         {

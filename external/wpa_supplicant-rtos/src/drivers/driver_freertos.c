@@ -11,9 +11,7 @@
 #include "driver_freertos.h"
 #include "supp_main.h"
 #include "rtthread.h"
-//#include "wm_net.h"
 #include "fsl_os_abstraction.h"
-#include "wm_net.h"
 #include "ap/hostapd.h"
 
 #define SCAN_TIMEOUT   30
@@ -456,6 +454,7 @@ static void *wpa_drv_freertos_init(void *ctx, const char *ifname, void *global_p
 #else
     LOCK_TCPIP_CORE();
     device = netif_find(ifname);
+    RT_ASSERT(device != RT_NULL);
     UNLOCK_TCPIP_CORE();
 #endif
 
@@ -535,12 +534,11 @@ static void *wpa_drv_freertos_init(void *ctx, const char *ifname, void *global_p
     callbk_fns.mgmt_rx           = wpa_drv_freertos_event_proc_mgmt_rx;
     callbk_fns.eapol_rx          = wpa_drv_freertos_event_proc_eapol_rx;
     callbk_fns.signal_change     = wpa_drv_freertos_event_proc_signal_change;
-    callbk_fns.mac_changed = wpa_drv_freertos_event_mac_changed;
+    callbk_fns.mac_changed       = wpa_drv_freertos_event_mac_changed;
     callbk_fns.chan_list_changed = wpa_drv_freertos_event_chan_list_changed;
     callbk_fns.ecsa_complete     = wpa_drv_freertos_event_ecsa_complete;
     callbk_fns.dfs_cac_started   = wpa_drv_freertos_event_dfs_cac_started;
     callbk_fns.dfs_cac_finished  = wpa_drv_freertos_event_dfs_cac_finished;
-
     if_ctx->dev_priv = dev_ops->init(if_ctx, ifname, &callbk_fns);
 
     if (!if_ctx->dev_priv)
@@ -548,10 +546,8 @@ static void *wpa_drv_freertos_init(void *ctx, const char *ifname, void *global_p
         wpa_printf(MSG_ERROR, "%s: Failed to initialize the interface\n", __func__);
         os_free(if_ctx);
         if_ctx = NULL;
-
         goto out;
     }
-
 out:
     return if_ctx;
 }
@@ -837,17 +833,13 @@ static int wpa_drv_freertos_deauthenticate(void *priv, const unsigned char *addr
 out:
     return ret;
 }
-/*
-wpa_drv_freertos_authenticate 是 FreeRTOS 平台下 wpa_supplicant 驱动适配层的认证接口实现。
-它的作用是：根据上层传入的认证参数，调用底层驱动的认证流程，完成与目标 AP 的 802.11 认证过程
-*/
+
 static int wpa_drv_freertos_authenticate(void *priv, struct wpa_driver_auth_params *params)
 {
     struct freertos_drv_if_ctx *if_ctx              = NULL;
     const struct freertos_wpa_supp_dev_ops *dev_ops = NULL;
     struct wpa_bss *curr_bss;
     int ret = -1;
-    //RT_ASSERT(0);
     if ((!priv) || (!params))
     {
         wpa_printf(MSG_ERROR, "%s: Invalid params\n", __func__);
@@ -893,9 +885,10 @@ static int wpa_drv_freertos_authenticate(void *priv, struct wpa_driver_auth_para
     os_memset(if_ctx->auth_bssid, 0, ETH_ALEN);
 
     if_ctx->associated = false;
-
+    rt_kprintf("%s %d\n", __func__, __LINE__);
+    //RT_ASSERT(0);
     ret = dev_ops->authenticate(if_ctx->dev_priv, params, curr_bss);
-
+    rt_kprintf("%s %d\n", __func__, __LINE__);
     if (ret)
     {
         wpa_printf(MSG_ERROR, "%s: authenticate op failed\n", __func__);

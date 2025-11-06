@@ -18,8 +18,8 @@
 #define MIN(a, b) (a < b ? a : b)
 #endif /* MIN */
 #endif
-#define close lwip_close
-#define fcntl lwip_fcntl
+// #define close lwip_close
+// #define fcntl lwip_fcntl
 #if defined(__linux__) || defined(__GLIBC__)
 #include <endian.h>
 #include <byteswap.h>

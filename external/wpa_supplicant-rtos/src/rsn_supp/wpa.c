@@ -2371,7 +2371,6 @@ int wpa_sm_rx_eapol(struct wpa_sm *sm, const u8 *src_addr, const u8 *buf, size_t
     int ret = -1;
     u8 *mic, *key_data;
     size_t mic_len, keyhdrlen, pmk_len;
-rt_kprintf("%s %d \n",__func__,__LINE__);
 #ifdef CONFIG_IEEE80211R
     sm->ft_completed = 0;
 #endif /* CONFIG_IEEE80211R */

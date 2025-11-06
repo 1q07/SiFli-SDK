@@ -3,6 +3,7 @@
  *  @brief  This file provides wpa supplicant APIs.
  *
  *  Copyright 2023 NXP
+ *  Copyright 2025 SiFli Technologies(Nanjing) Co., Ltd
  *
  *  SPDX-License-Identifier: BSD-3-Clause
  *
@@ -15,7 +16,7 @@
 #include <lwip/netif.h>
 #include <lwip/netifapi.h>
 #endif
-#include <wlan_wifi.h>
+#include <wlan_wpa.h>
 
 
 #define MAX_SSID_LEN 32

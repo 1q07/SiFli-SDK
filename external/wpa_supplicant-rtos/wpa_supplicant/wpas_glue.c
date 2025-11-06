@@ -707,7 +707,6 @@ static int wpa_supplicant_mark_authenticated(void *ctx, const u8 *target_ap)
     bss = wpa_bss_get_bssid(wpa_s, target_ap);
     if (bss == NULL)
         return -1;
-rt_kprintf("%s %d\n", __func__, __LINE__);
     os_memset(&params, 0, sizeof(params));
     params.bssid              = target_ap;
     params.freq               = bss->freq;
@@ -1058,7 +1057,6 @@ static void wpa_supplicant_port_cb(void *ctx, int authorized)
     }
 #endif /* CONFIG_AP */
     wpa_printf(MSG_DEBUG, "EAPOL: Supplicant port status: %s", authorized ? "Authorized" : "Unauthorized");
-    rt_kprintf("%s %d\n", __func__, __LINE__);
     wpa_drv_set_supp_port(wpa_s, authorized);
 }
 
@@ -1340,7 +1338,6 @@ int wpa_supplicant_init_wpa(struct wpa_supplicant *wpa_s)
 
         return -1;
     }
-rt_kprintf("%s %d\n", __func__, __LINE__);
     ctx->ctx                 = wpa_s;
     ctx->msg_ctx             = wpa_s;
     ctx->set_state           = _wpa_supplicant_set_state;
@@ -1404,7 +1401,6 @@ void wpa_supplicant_rsn_supp_set_config(struct wpa_supplicant *wpa_s, struct wpa
     struct rsn_supp_config conf;
     if (ssid)
     {
-        rt_kprintf("%s %d\n", __func__, __LINE__);
         os_memset(&conf, 0, sizeof(conf));
         conf.network_ctx             = ssid;
         conf.allowed_pairwise_cipher = ssid->pairwise_cipher;
@@ -1448,6 +1444,5 @@ void wpa_supplicant_rsn_supp_set_config(struct wpa_supplicant *wpa_s, struct wpa
 #endif /* CONFIG_TESTING_OPTIONS */
 #endif /* CONFIG_PASN */
     }
-    rt_kprintf("%s %d\n", __func__, __LINE__);
     wpa_sm_set_config(wpa_s->wpa, ssid ? &conf : NULL);
 }

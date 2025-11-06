@@ -3794,7 +3794,7 @@ static void wpas_start_assoc_cb(struct wpa_radio_work *work, int deinit)
         wpas_connect_work_done(wpa_s);
         return;
     }
-wpa_printf(WPA_MSG_LOG,"%s %d\n", __func__, __LINE__);
+
     os_memcpy(prev_bssid, wpa_s->bssid, ETH_ALEN);
     os_memset(&params, 0, sizeof(params));
     wpa_s->reassociate          = 0;
@@ -3802,13 +3802,13 @@ wpa_printf(WPA_MSG_LOG,"%s %d\n", __func__, __LINE__);
 
     /* Starting new association, so clear the possibly used WPA IE from the
      * previous association. */
-    wpa_printf(WPA_MSG_LOG,"%s %d\n", __func__, __LINE__);
+
     wpa_sm_set_assoc_wpa_ie(wpa_s->wpa, NULL, 0);
-    wpa_printf(WPA_MSG_LOG,"%s %d\n", __func__, __LINE__);
+
     wpa_sm_set_assoc_rsnxe(wpa_s->wpa, NULL, 0);
     wpa_s->rsnxe_len       = 0;
     wpa_s->mscs_setup_done = false;
-wpa_printf(WPA_MSG_LOG,"%s %d\n", __func__, __LINE__);
+
     wpa_ie = wpas_populate_assoc_ies(wpa_s, bss, ssid, &params, NULL);
     if (!wpa_ie)
     {
@@ -6523,13 +6523,13 @@ static int wpas_init_driver(struct wpa_supplicant *wpa_s, const struct wpa_inter
 
     driver = iface->driver;
 next_driver:
-wpa_printf(WPA_MSG_LOG,"%s %d\n", __func__, __LINE__);
+    wpa_printf(WPA_MSG_LOG,"%s %d\n", __func__, __LINE__);
     if (wpa_supplicant_set_driver(wpa_s, driver) < 0)
         return -1;
     wpa_printf(WPA_MSG_LOG,"%s %d\n", __func__, __LINE__);
     wpa_s->drv_priv = wpa_drv_init(wpa_s, wpa_s->ifname);
-    wpa_printf(WPA_MSG_LOG,"%s %d wpa_s->ifname=%s drv_priv=%p\n", __func__, __LINE__,wpa_s->ifname,wpa_s->drv_priv);
-    rt_thread_mdelay(500);
+    rt_kprintf("%s %d wpa_s->ifname=%s drv_priv=%p\n", __func__, __LINE__,wpa_s->ifname,wpa_s->drv_priv);
+    rt_thread_mdelay(1000);
     if (wpa_s->drv_priv == NULL)
     {
         wpa_printf(WPA_MSG_LOG,"%s %d\n", __func__, __LINE__);

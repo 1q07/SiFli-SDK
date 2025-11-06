@@ -20,7 +20,6 @@
 #include "wps/wps_defs.h"
 #include "config_ssid.h"
 #include "wmm_ac.h"
-
 extern const char *const wpa_supplicant_version;
 extern const char *const wpa_supplicant_license;
 #ifndef CONFIG_NO_STDOUT_DEBUG

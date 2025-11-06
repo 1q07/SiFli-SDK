@@ -15,7 +15,7 @@
 #ifndef BUILD_CONFIG_H
 #define BUILD_CONFIG_H
 
-#include <wifi_config_default.h>
+//#include <wifi_config_default.h>
 
 #if !CONFIG_WPA_SUPP
 #undef CONFIG_WPA_SUPP

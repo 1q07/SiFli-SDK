@@ -3,6 +3,7 @@
  *  @brief  This file provides wpa supplicant APIs.
  *
  *  Copyright 2023 NXP
+ *  Copyright 2025 SiFli Technologies(Nanjing) Co., Ltd
  *
  *  SPDX-License-Identifier: BSD-3-Clause
  *
@@ -123,7 +124,6 @@ static inline struct wpa_supplicant *get_wpa_s_handle(const struct netif *dev)
     wpa_s = wpa_supplicant_get_iface(global, ifname);
     if (!wpa_s)
     {
-        rt_kprintf("%s: Unable to get wpa_s handle for %s,wpa_s=0x%p,dev=%p\n", __func__, ifname,wpa_s,dev);
         RT_ASSERT(0);
         return NULL;
     }
@@ -2526,7 +2526,6 @@ int wpa_supp_connect(const struct netif *dev, struct wlan_network *network)
     int ret = 0;
 
     OSA_MutexLock((osa_mutex_handle_t)wpa_supplicant_mutex, osaWaitForever_c);
-rt_kprintf("%s %d\n", __func__, __LINE__);
     wpa_s = get_wpa_s_handle(dev);
     if (!wpa_s)
     {
@@ -2535,7 +2534,6 @@ rt_kprintf("%s %d\n", __func__, __LINE__);
     }
 
     ssid = ssid_prev = wpa_s->conf->ssid;
-rt_kprintf("%s %d\n", __func__, __LINE__);
     while (ssid)
     {
         if (network->id == ssid->id)
@@ -2550,7 +2548,6 @@ rt_kprintf("%s %d\n", __func__, __LINE__);
         ret = -1;
         goto out;
     }
-rt_kprintf("%s %d\n", __func__, __LINE__);
     /* the specific connect ssid isn't in the foremost */
     if (ssid != ssid_prev)
     {
@@ -2559,7 +2556,6 @@ rt_kprintf("%s %d\n", __func__, __LINE__);
       ssid->next = wpa_s->conf->ssid;
       wpa_s->conf->ssid = ssid;
     }
-rt_kprintf("%s %d\n", __func__, __LINE__);
     if (ssid && ssid == wpa_s->current_ssid && wpa_s->current_ssid && wpa_s->wpa_state >= WPA_AUTHENTICATING)
     {
         /* We are already associated with the selected network */
@@ -2569,16 +2565,12 @@ rt_kprintf("%s %d\n", __func__, __LINE__);
         wpa_supplicant_deauthenticate(wpa_s, WLAN_REASON_DEAUTH_LEAVING);//删除认证
         goto out;
     }
-rt_kprintf("%s %d\n", __func__, __LINE__);
     wpa_s->scan_min_time.sec  = 0;
     wpa_s->scan_min_time.usec = 0;
 
     //wpa_supplicant_enable_network(wpa_s, ssid);
-rt_kprintf("%s %d\n", __func__, __LINE__);
     wpa_supplicant_select_network(wpa_s, ssid);
-rt_kprintf("%s %d\n", __func__, __LINE__);
     send_wpa_supplicant_dummy_event();
-rt_kprintf("%s %d\n", __func__, __LINE__);
     wpa_supp_api_ctrl.dev          = dev;
     wpa_supp_api_ctrl.requested_op = CONNECT;
 
@@ -2643,32 +2635,6 @@ int wpa_supp_disconnect(const struct netif *dev)
         ret = -1;
         goto out;
     }
-#if 0
-    sme_clear_on_disassoc(wpa_s);
-
-    wpabuf_free(wpa_s->pending_eapol_rx);
-    wpa_s->pending_eapol_rx = NULL;
-
-#if CONFIG_SAE
-    os_free(wpa_s->sme.sae_rejected_groups);
-    wpa_s->sme.sae_rejected_groups = NULL;
-#endif /* CONFIG_SAE */
-
-    os_free(wpa_s->next_scan_freqs);
-    wpa_s->next_scan_freqs = NULL;
-
-    os_free(wpa_s->manual_scan_freqs);
-    wpa_s->manual_scan_freqs = NULL;
-
-    os_free(wpa_s->select_network_scan_freqs);
-    wpa_s->select_network_scan_freqs = NULL;
-
-    os_free(wpa_s->manual_sched_scan_freqs);
-    wpa_s->manual_sched_scan_freqs = NULL;
-
-    os_free(wpa_s->last_scan_res);
-    wpa_s->last_scan_res = NULL;
-#endif
 
     wpa_s->scan_res_fail_handler = NULL;
 
@@ -2888,11 +2854,8 @@ int wpa_supp_reassociate(const struct netif *dev)
     if (wpa_s->driver->deauthenticate) {
         wpa_s->driver->deauthenticate(wpa_s->drv_priv, wpa_s->bssid, WLAN_REASON_PREV_AUTH_NOT_VALID);
     }
-    rt_kprintf("%s %d\n", __func__, __LINE__);
     wpas_request_connection(wpa_s);
-rt_kprintf("%s %d\n", __func__, __LINE__);
     send_wpa_supplicant_dummy_event();
-rt_kprintf("%s %d\n", __func__, __LINE__);
     wpa_supp_api_ctrl.dev          = dev;
     wpa_supp_api_ctrl.requested_op = RECONNECT;
 
@@ -4737,14 +4700,12 @@ int wpa_supp_status(const struct netif *dev)
     struct wpa_supp_api_ctrl *ctrl = &wpa_supp_api_ctrl;
 
     OSA_MutexLock((osa_mutex_handle_t)wpa_supplicant_mutex, osaWaitForever_c);
-    rt_kprintf("%s %d\n", __func__, __LINE__);
     wpa_s = get_wpa_s_handle(dev);
     if (!wpa_s)
     {
         status = -1;
         goto out;
     }
-    rt_kprintf("%s %d wpa_state=%d\n", __func__, __LINE__,wpa_s->wpa_state);
     ctrl->supp_thread_state = SUPP_THREAD_RUNNING;
     status = wpa_s->wpa_state;
 #if CONFIG_HOSTAPD

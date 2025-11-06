@@ -3,6 +3,7 @@
  *  @brief  This file provides wpa supplicant init APIs.
  *
  *  Copyright 2023 NXP
+ *  Copyright 2025 SiFli Technologies(Nanjing) Co., Ltd
  *
  *  SPDX-License-Identifier: BSD-3-Clause
  *
@@ -49,7 +50,7 @@
 
 #include "supp_main.h"
 #include "crc32.h"
-
+#include "rtconfig.h"
 #if CONFIG_WPA_SUPP_CRYPTO
 
 #if !defined(MBEDTLS_CONFIG_FILE)
@@ -58,7 +59,7 @@
 #include MBEDTLS_CONFIG_FILE
 #endif
 
-#if defined(MBEDTLS_NXP_SSSAPI)
+#if defined(MBEDTLS_SKW_SSSAPI)
 #include "sssapi_mbedtls.h"
 #elif defined(MBEDTLS_MCUX_CSS_API)
 #include "platform_hw_ip.h"
@@ -117,7 +118,7 @@ OSA_TASK_HANDLE_DEFINE(supplicant_thread);
 OSA_EVENT_HANDLE_DEFINE(supplicant_event_Handle);
 
 /* OSA_TASKS: name, priority, instances, stackSz, useFloat */
-static OSA_TASK_DEFINE(supplicant_main_task, PRIORITY_RTOS_TO_OSA((configMAX_PRIORITIES - 3)), 1, CONFIG_SUPP_MAIN_THREAD_STACK_SIZE, 0);
+static OSA_TASK_DEFINE(supplicant_main_task, 9, 1, CONFIG_SUPP_MAIN_THREAD_STACK_SIZE, 0);
 #endif
 
 struct hapd_global 
@@ -569,7 +570,28 @@ int send_wpa_supplicant_event(struct wpa_supplicant_event_msg *msg)
 
     return 0;
 }
-
+struct netif *wpa_get_netif(void)
+{
+    struct netif *w0 = netif_find(PKG_USING_WPA_NET_NAME);
+    if (w0 == NULL)
+    {
+        /* As a robust fallback, enumerate netif_list and pick the first Wi-Fi netif (name starts with 'w') */
+        for (struct netif *it = netif_list; it != NULL; it = it->next)
+        {
+            if (it->name[0] == 'm')
+            {
+                w0 = it;
+                break;
+            }
+        }
+    }
+    return w0;
+}
+// struct netif *net_get_sta_interface(void)
+// {
+    
+//     return NULL;
+// }
 #ifdef __ZEPHYR__
 static void supplicant_main_task(void *arg, void *arg1, void *arg2)
 #else
@@ -628,7 +650,8 @@ static void supplicant_main_task(osa_task_param_t arg)
 
     idx = 0;
 
-    netif = net_get_sta_interface();
+    //netif = net_get_sta_interface();
+    netif = wpa_get_netif();
     if (netif != NULL)
     {
         ifaces[idx].ctrl_interface = "test_ctrl";
@@ -637,29 +660,11 @@ static void supplicant_main_task(osa_task_param_t arg)
     }
     else
     {
+        RT_ASSERT(0);
         wpa_printf(MSG_ERROR, "Failed to initialize network interface");
         exitcode = -1;
         goto out;
     }
-
-#if 0//!CONFIG_HOSTAPD
-    netif = net_get_uap_interface();
-
-    if (netif != NULL)
-    {
-        ifaces[idx].ctrl_interface = NULL; //"test_ctrl";
-
-        iface_cb(netif, ifaces);
-    }
-    else
-    {
-        wpa_printf(MSG_ERROR, "Failed to initialize network interface");
-        exitcode = -1;
-        goto out;
-    }
-#else
-    //hostapd_main_task(arg);
-#endif
 
     params.ctrl_interface = "test_ctrl";
     wpa_printf(WPA_MSG_LOG, "Using interface %s\n", ifaces[0].ifname);

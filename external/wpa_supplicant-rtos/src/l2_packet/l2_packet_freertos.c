@@ -29,13 +29,17 @@ int l2_packet_get_own_addr(struct l2_packet_data *l2, u8 *addr)
     return 0;
 }
 
-extern int wifi_supp_inject_frame(const unsigned int bss_type, const uint8_t *buff, const size_t len);
+__WEAK int wifi_supp_inject_frame(const unsigned int bss_type, const uint8_t *buff, const size_t len)
+{
+    return 0;
+}
+//extern int wifi_supp_inject_frame(const unsigned int bss_type, const uint8_t *buff, const size_t len);
 
 int l2_packet_send(struct l2_packet_data *l2, const u8 *dst_addr, u16 proto, const u8 *buf, size_t len)
 {
     unsigned int interface;
 
-    if (strstr(l2->ifname, "ml"))
+    if (strstr(l2->ifname, PKG_USING_WPA_NET_NAME))
         interface = 0; //WLAN_BSS_TYPE_STA;
     else
         interface = 1; //WLAN_BSS_TYPE_UAP;
@@ -83,7 +87,7 @@ struct l2_packet_data *l2_packet_init(const char *ifname,
     const struct net_linkaddr *link_addr            = NULL;
 #endif
 
-    if (strstr(ifname, "ml"))
+    if (strstr(ifname, PKG_USING_WPA_NET_NAME))
         p_l2 = (struct l2_packet_data *)&gm_l2;
     else
         p_l2 = (struct l2_packet_data *)&gu_l2;

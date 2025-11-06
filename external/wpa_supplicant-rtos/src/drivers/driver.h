@@ -6254,11 +6254,11 @@ extern const struct wpa_driver_ops wpa_driver_atheros_ops;
 extern const struct wpa_driver_ops wpa_driver_none_ops; /* driver_none.c */
 #endif                                                  /* CONFIG_DRIVER_NONE */
 #ifdef __ZEPHYR__
-extern const struct wpa_driver_ops wpa_driver_freertos_ops; /* driver_wifi_nxp.c */
+extern const struct wpa_driver_ops wpa_driver_freertos_ops; 
 // extern const struct wpa_driver_ops wpa_driver_zep_ops; /* driver_zephyr.c */
 #endif                                                 /* __ZEPHYR__ */
 #ifdef CONFIG_FREERTOS
-extern const struct wpa_driver_ops wpa_driver_freertos_ops; /* driver_wifi_nxp.c */
+extern const struct wpa_driver_ops wpa_driver_freertos_ops; 
 #endif                                                      /* CONFIG_FREERTOS */
 
 #endif /* DRIVER_H */

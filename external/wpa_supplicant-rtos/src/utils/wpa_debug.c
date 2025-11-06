@@ -62,7 +62,7 @@ static int wpa_to_android_level(int level)
 #include <sys/stat.h>
 #include <fcntl.h>
 #endif /* CONFIG_DEBUG_FILE */
-#include <wm_utils.h>
+//#include <wm_utils.h>
 void wpa_debug_print_timestamp(void)
 {
 #ifndef CONFIG_ANDROID_LOG

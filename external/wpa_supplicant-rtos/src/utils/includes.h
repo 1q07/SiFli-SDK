@@ -58,13 +58,19 @@
 #include <zephyr/shell/shell.h>
 #endif /* defined(__ZEPHYR__) */
 
-#include <wm_net.h>
+//#include <wm_net.h>
 #include <lwip/opt.h>
 #include <lwip/sys.h>
 #include <lwip/tcpip.h>
 #include <lwip/api.h>
 
-
+#if defined(__GNUC__)
+#define __WEAK __attribute__((weak))
+#elif defined(__ICCARM__) || defined(__CC_ARM)
+#define __WEAK __weak
+#else
+#define __WEAK
+#endif
 
 #if (CONFIG_FREERTOS)
 
@@ -123,7 +129,15 @@
 #if !CONFIG_AES
 #define CONFIG_INTERNAL_AES 1
 #endif
-
+#ifndef WM_FAIL 
+#define WM_FAIL       1
+#endif
+#ifndef WM_SUCCESS
+#define WM_SUCCESS    0
+#endif
+#ifndef CONFIG_11R
+    #define CONFIG_11R      1
+#endif
 #if CONFIG_11R
 #define CONFIG_IEEE80211R 1
 #if CONFIG_WPA_SUPP_AP
@@ -175,7 +189,9 @@
 //#define CONFIG_HMAC_SHA384_KDF
 //#define CONFIG_INTERNAL_SHA384
 #endif
-
+#ifndef CONFIG_WPA_SUPP_WPA3
+#define CONFIG_WPA_SUPP_WPA3 CONFIG_WPA_SUPP
+#endif
 #if CONFIG_WPA_SUPP_WPA3
 #define CONFIG_SAE 1
 //#define CONFIG_SAE_PK

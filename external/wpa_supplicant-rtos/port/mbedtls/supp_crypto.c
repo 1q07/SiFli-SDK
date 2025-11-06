@@ -3,6 +3,7 @@
  *  @brief  This file provides mbedtls port layer API for supplicant
  *
  *  Copyright 2024 NXP
+ *  Copyright 2025 SiFli Technologies(Nanjing) Co., Ltd
  *
  *  SPDX-License-Identifier: BSD-3-Clause
  *

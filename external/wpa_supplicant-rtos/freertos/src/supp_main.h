@@ -3,6 +3,7 @@
  *  @brief  This file provides wpa supplicant init APIs.
  *
  *  Copyright 2023 NXP
+ *  Copyright 2025 SiFli Technologies(Nanjing) Co., Ltd
  *
  *  SPDX-License-Identifier: BSD-3-Clause
  *

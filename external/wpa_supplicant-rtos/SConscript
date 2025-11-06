@@ -244,9 +244,13 @@ path = [
 CPPDEFINES = [
     'USE_RTOS',
     'SDK_OS_FREE_RTOS',
-    # 'MBEDTLS_CONFIG_FILE="wpa_supp_mbedtls_config.h"'
+    'CONFIG_MBO',
 ]
 
 group = DefineGroup('wpa_supplicant', src, depend = ['PKG_USING_WPA_SUPPLICANT'], CPPPATH = path, CPPDEFINES=CPPDEFINES)
+
+# Include Fitter_os SConscript and merge groups
+os_group = SConscript('Fitter_os/SConscript')
+group = group + os_group
 
 Return('group')

@@ -399,7 +399,6 @@ SM_STEP(SUPP_PAE)
                     SM_ENTER(SUPP_PAE, CONNECTING);
                 else if (sm->startWhen == 0 && sm->startCount >= sm->maxStart && sm->portValid)
                 {
-                    rt_kprintf("%s %d\n",__func__,__LINE__);
                     SM_ENTER(SUPP_PAE, AUTHENTICATED);
                 }
                 else if (sm->eapSuccess || sm->eapFail)
@@ -959,7 +958,6 @@ static void eapol_sm_set_port_authorized(struct eapol_sm *sm)
     cb                          = sm->suppPortStatus != Authorized || sm->force_authorized_update;
     sm->force_authorized_update = false;
     sm->suppPortStatus          = Authorized;
-    rt_kprintf("%s %d \n", __func__, sm->suppPortStatus);
     
     if (cb && sm->ctx->port_cb)
         sm->ctx->port_cb(sm->ctx->ctx, 1);
@@ -1277,7 +1275,6 @@ int eapol_sm_rx_eapol(struct eapol_sm *sm, const u8 *src, const u8 *buf, size_t 
     int data_len;
     int res = 1;
     size_t plen;
-rt_kprintf("%s %d \n",__func__,__LINE__);
     if (sm == NULL)
         return 0;
     sm->dot1xSuppEapolFramesRx++;
