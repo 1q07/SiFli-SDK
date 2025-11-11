@@ -131,9 +131,9 @@ __weak int bf0_enable_pll(uint32_t freq, uint8_t type)// need updata drv_audcode
     uint32_t fc_vco;
     uint32_t fc_vco_min;
     uint32_t fc_vco_max;
-    uint32_t delta_cnt=0;
-    uint32_t delta_cnt_min=0;
-    uint32_t delta_cnt_max=0;
+    uint32_t delta_cnt = 0;
+    uint32_t delta_cnt_min = 0;
+    uint32_t delta_cnt_max = 0;
     uint32_t delta_fc_vco;
     uint32_t target_cnt = 1838;
 
@@ -878,7 +878,7 @@ __HAL_ROM_USED HAL_StatusTypeDef HAL_AUDCODEC_Config_RChanel(AUDCODEC_HandleType
                                          (0x7 << AUDCODEC_ADC_CH0_CFG_HPF_COEF_Pos) |
                                          (0   << AUDCODEC_ADC_CH0_CFG_STB_INV_Pos) |
                                          (0   << AUDCODEC_ADC_CH0_CFG_DMA_EN_Pos) |
-                                         (0xc << AUDCODEC_ADC_CH0_CFG_ROUGH_VOL_Pos) |
+                                         (0xa << AUDCODEC_ADC_CH0_CFG_ROUGH_VOL_Pos) |
                                          (0   << AUDCODEC_ADC_CH0_CFG_FINE_VOL_Pos) |
                                          (1   << AUDCODEC_ADC_CH0_CFG_DATA_FORMAT_Pos); //16bit
         //hacodec->Instance->ADC_CH0_CFG = 0x10ABD;
@@ -890,7 +890,7 @@ __HAL_ROM_USED HAL_StatusTypeDef HAL_AUDCODEC_Config_RChanel(AUDCODEC_HandleType
                                          (0xf << AUDCODEC_ADC_CH0_CFG_HPF_COEF_Pos) |
                                          (0   << AUDCODEC_ADC_CH0_CFG_STB_INV_Pos) |
                                          (0   << AUDCODEC_ADC_CH0_CFG_DMA_EN_Pos) |
-                                         (0xc << AUDCODEC_ADC_CH0_CFG_ROUGH_VOL_Pos) |
+                                         (0xa << AUDCODEC_ADC_CH0_CFG_ROUGH_VOL_Pos) |
                                          (0   << AUDCODEC_ADC_CH0_CFG_FINE_VOL_Pos) |
                                          (1   << AUDCODEC_ADC_CH0_CFG_DATA_FORMAT_Pos);  //16bit
         break;
