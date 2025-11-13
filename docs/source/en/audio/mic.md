@@ -7,15 +7,16 @@ EQ工具可以调试数字麦增益，修改的变量为drv_audprc.c里的g_adc_
 代码在bf0_hal_audcodec.c（56x/58x platform）或bf0_hal_audcodec_m.c (52x/57x platform)
 这里rough vol为 0xc， 把 ADC_CH0_CFG_ROUGH_VOL 对应的值减小来解决，可以从0xc改为0xa， 通过适当降低rough vol，这个降低这个数字增益改善饱和值过低。
 ROUGH_VOL的值步长为6db，设置的值对应关系如下：
-0   ----- -60db
-1   ----- -54db
-    ... 
-    ...
-0xa -----   0db
-0xb -----   6db
-    ...
-0xf -----  30db
-
+```c
+0   ----- -60db  
+1   ----- -54db  
+    ...  
+    ...  
+0xa -----   0db  
+0xb -----   6db  
+    ...  
+0xf -----  30db  
+```
 FINE_VOL的值为0 ~ 0xc，对应0~6db, 步长为0.5db
 
 ```c
