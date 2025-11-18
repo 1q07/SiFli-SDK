@@ -1,6 +1,6 @@
 # Battery Calculator
 
-The battery calculator module is used to calculate the current battery percentage based on battery voltage values. It considers both charging and discharging states, uses different battery curve tables, and implements a multi-level filtering algorithm to improve the accuracy and stability of battery percentage calculations.
+The battery calculator module is used to calculate the current battery percentage based on battery voltage values. It considers both charging and discharging states, uses different battery curve tables, and implements a multi-level filtering algorithm to improve the accuracy and stability of battery level calculation.
 
 ## Features
 
@@ -8,10 +8,10 @@ The battery calculator module is used to calculate the current battery percentag
 - **Multi-level Filtering Algorithm**:
   - Primary Filter: Threshold-based jump filtering
   - Secondary Filter: Weighted average smoothing (optional)
-- **Charge/Discharge State Detection**: Automatically identifies current charging state and switches to corresponding curve
-- **Linear Interpolation Calculation**: Performs precise percentage calculations within curve tables
+- **Charge/Discharge State Detection**: Automatically recognizes current charging state and switches corresponding curves
+- **Linear Interpolation Calculation**: Performs precise percentage calculation within curve tables
 
-## Core Structures
+## Core Structure
 
 ### battery_calculator_config_t
 
@@ -26,7 +26,7 @@ typedef struct {
     uint32_t charge_filter_threshold;                  // Charging filter threshold (mV)
     uint32_t discharge_filter_threshold;               // Discharging filter threshold (mV)
     uint8_t filter_count;                              // Filter count threshold
-    bool secondary_filter_enabled;                     // Enable secondary filter
+    bool secondary_filter_enabled;                     // Whether to enable secondary filter
     uint8_t secondary_filter_weight_pre;               // Secondary filter previous voltage weight (0-100)
     uint8_t secondary_filter_weight_cur;               // Secondary filter current voltage weight (0-100)
 } battery_calculator_config_t;
@@ -41,11 +41,11 @@ void battery_calculator_init(battery_calculator_t *calc,
                             const battery_calculator_config_t *config);
 ```
 
-**Function**: Initialize the battery calculator
+**Function**: Initialize battery calculator
 
 **Parameters**:
 - `calc`: Battery calculator instance pointer
-- `config`: Configuration parameters pointer
+- `config`: Configuration parameter pointer
 
 **Example**:
 ```c
@@ -83,15 +83,25 @@ uint8_t battery_calculator_get_percent(battery_calculator_t *calc,
 
 **Example**:
 ```c
-uint32_t voltage = 3800;  // 3.8V
+uint32_t voltage = 38000;  // 3.8V
 uint8_t percentage = battery_calculator_get_percent(&battery_calc, voltage);
 rt_kprintf("Battery: %d%%\n", percentage);
 ```
 
-## Usage Examples
+## Usage Example
 
-### Complete Application Layer Example
+First, enable the required macro switches in menuconfig
 
+1. Enable battery calculator function
+![Battery Calculator](../../assets/battery_open1.png)
+2. Enable charge
+![Battery Calculator](../../assets/battery_open2.png)
+3. Select the charging chip for your board. If not available, use simple charge
+![Battery Calculator](../../assets/battery_open4.png)
+4. Configure plug/unplug detection pin corresponding to your board's detection pin
+![Battery Calculator](../../assets/battery_open3.png)
+
+### Complete Application Layer Example Code
 ```c
 #include "battery_calculator.h"
 
@@ -104,8 +114,8 @@ void battery_monitor_task(void *parameter)
         .charging_table_size = charging_curve_table_size,
         .discharging_table = discharge_curve_table,
         .discharging_table_size = sizeof(discharge_curve_table)/sizeof(battery_lookup_point_t),
-        .charge_filter_threshold = 50,      // 50mV threshold when charging
-        .discharge_filter_threshold = 30,   // 30mV threshold when discharging
+        .charge_filter_threshold = 50,      // 50mV threshold during charging
+        .discharge_filter_threshold = 30,   // 30mV threshold during discharging
         .filter_count = 3,                  // Requires 3 confirmations
         .secondary_filter_enabled = true,   // Enable secondary filter
         .secondary_filter_weight_pre = 90,  // Previous voltage weight 90%
@@ -142,13 +152,13 @@ void battery_monitor_task(void *parameter)
 |------|--------|------|
 | `charge_filter_threshold` | 50mV | Voltage jump threshold in charging state |
 | `discharge_filter_threshold` | 30mV | Voltage jump threshold in discharging state |
-| `filter_count` | 3 | Requires N consecutive threshold exceedances to update |
+| `filter_count` | 3 | Number of consecutive times threshold must be exceeded to update |
 
 ### Secondary Filter Parameters
 
 | Parameter | Recommended Value | Description |
 |------|--------|------|
-| `secondary_filter_enabled` | true | Enable secondary filter |
+| `secondary_filter_enabled` | true | Whether to enable secondary filter |
 | `secondary_filter_weight_pre` | 90 | Historical voltage weight (0-100) |
 | `secondary_filter_weight_cur` | 10 | Current voltage weight (0-100) |
 
@@ -156,41 +166,45 @@ void battery_monitor_task(void *parameter)
 
 ## Battery Curve Table Configuration
 
-**Important Note**: The default battery curve tables provided here are reference examples only and may not match the actual battery in use. To ensure accurate battery percentage calculations, **it is strongly recommended to obtain matching battery voltage-capacity curve data from the battery manufacturer** and configure the lookup tables accordingly.
+**Important Note**: The default battery curve table provided here is for reference only and may not match the actual battery being used. To ensure accurate battery level calculation, **it is strongly recommended to obtain matching battery voltage-capacity curve data from the battery manufacturer** and configure the lookup table according to the actual curve.
 
-Battery curve tables are defined in `battery_table.c` with the following format:
+Battery curve tables are defined in `battery_table.c` in the following format:
 
 ```c
 const battery_lookup_point_t chargeing_curve_table[] = {
-    {4200, 100},  // 4.2V -> 100%
-    {4100, 90},
-    {4000, 80},
+    { 100,  41808},  // 4.18V -> 100%
+    { 99,   41401},
+    { 98,   41109},
+    { 97,   40921},
+    { 96,   40762},
+    { 95,   40647},
+    { 94,   40546}, 
     // ... more points
-    {3300, 0}     // 3.3V -> 0%
+    {0,    35006}     // 3.5V -> 0%
 };
 ```
 
-**Configuration Guidelines**:
+**Configuration Points**:
 1. Voltage values arranged from high to low
 2. Percentages correspond from 100 to 0
-3. Charging and discharging curves defined separately
-4. Adjust curve points based on actual battery characteristics
+3. Charging and discharging curves are defined separately
+4. Adjust curve points according to actual battery characteristics
 
-## Notes
+## Important Notes
 
 1. **Initialization Order**: Must call `battery_calculator_init()` before using `battery_calculator_get_percent()`
-2. **Voltage Units**: All voltage values use millivolts (mV) as units
-3. **Curve Table Requirements**: Curve tables must be sorted by voltage from high to low
-4. **Charging State Detection**: Module automatically detects charging state via `CHARGE_DETECT_PIN`
-5. **Filter Parameter Adjustment**: Adjust filter parameters based on actual battery characteristics and application scenarios
+2. **Voltage Units**: All voltage values use millivolts (mV) as the unit
+3. **Curve Table Requirements**: Curve table must be sorted by voltage from high to low
+4. **Charging State Detection**: Module automatically detects charging state through `CHARGE_DETECT_PIN`
+5. **Filter Parameter Adjustment**: Adjust filter parameters according to actual battery characteristics and application scenarios
 
 ## FAQ
 
-**Q: Battery percentage jumps too quickly?**  
-A: Increase filter threshold or `filter_count` value, or enable secondary filter and increase historical weight.
+**Q: Battery level jumps too quickly?**  
+A: Increase filter threshold or increase `filter_count` value, or enable secondary filter and increase historical weight.
 
-**Q: Battery percentage display is inaccurate?**  
-A: Check if battery curve table matches actual battery characteristics, recalibrate curve points if necessary.
+**Q: Battery level display is inaccurate?**  
+A: Check if the battery curve table matches actual battery characteristics. Recalibrate curve points if necessary.
 
 **Q: How to disable secondary filter?**  
 A: Set `secondary_filter_enabled = false`.

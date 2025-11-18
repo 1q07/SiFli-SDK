@@ -3,7 +3,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include "drv_gpio.h"
-
+#include "charge.h"
 #define DBG_TAG "battery"
 #include <rtdbg.h>
 
@@ -205,7 +205,9 @@ int battery_calculator_init(battery_calculator_t *calculator, const battery_calc
  */
 battery_charger_status_t battery_get_charging_status(void)
 {
-    return rt_pin_read(CHARGE_PIN) ? BATTERY_CHARGER_STATUS_CHARGING : BATTERY_CHARGER_STATUS_DISCHARGING;
+    uint8_t status = 0;
+    rt_charge_get_status(&status);
+    return status ? BATTERY_CHARGER_STATUS_CHARGING : BATTERY_CHARGER_STATUS_DISCHARGING;
 }
 
 /**

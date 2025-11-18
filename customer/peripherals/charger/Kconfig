@@ -63,4 +63,8 @@ menuconfig BSP_USING_CHARGER
                     int "battery detect used adc channel"
                     default 1
             endif
+            
+        config BSP_USING_CHARGER_DETECT
+            bool "Use charger detect"
+            default n
     endif

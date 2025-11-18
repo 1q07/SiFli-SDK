@@ -83,15 +83,25 @@ uint8_t battery_calculator_get_percent(battery_calculator_t *calc,
 
 **示例**：
 ```c
-uint32_t voltage = 3800;  // 3.8V
+uint32_t voltage = 38000;  // 3.8V
 uint8_t percentage = battery_calculator_get_percent(&battery_calc, voltage);
 rt_kprintf("Battery: %d%%\n", percentage);
 ```
 
 ## 使用示例
 
-### 应用层完整示例代码
+先在menuconfig中开启需要的宏开关
 
+1.开启电量计算器功能
+![Battery Calculator](../../assets/battery_open1.png)
+2.开启charge
+![Battery Calculator](../../assets/battery_open2.png)
+3.选择自己板子的充电芯片，如果没有，可以使用simple charge
+![Battery Calculator](../../assets/battery_open4.png)
+4.配置插拔检测引脚,对应当前板子的插拔检测引脚
+![Battery Calculator](../../assets/battery_open3.png)
+
+### 应用层完整示例代码
 ```c
 #include "battery_calculator.h"
 
@@ -162,11 +172,15 @@ void battery_monitor_task(void *parameter)
 
 ```c
 const battery_lookup_point_t chargeing_curve_table[] = {
-    {4200, 100},  // 4.2V -> 100%
-    {4100, 90},
-    {4000, 80},
+    { 100,  41808},  // 4.18V -> 100%
+    { 99,   41401},
+    { 98,   41109},
+    { 97,   40921},
+    { 96,   40762},
+    { 95,   40647},
+    { 94,   40546}, 
     // ... 更多点
-    {3300, 0}     // 3.3V -> 0%
+    {0,    35006}     // 3.5V -> 0%
 };
 ```
 
