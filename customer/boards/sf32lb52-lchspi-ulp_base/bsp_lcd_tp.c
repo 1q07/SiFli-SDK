@@ -28,7 +28,7 @@ void BSP_LCD_PowerDown(void)
 #ifdef LCD_USING_CO5300
     BSP_GPIO_Set(LCD_RESET_PIN, 0, 1);//reset
     BSP_GPIO_Set(LCD_VADD_EN, 0, 1); //
-    // BSP_GPIO_Set(38, 1, 1);//The sensor is powered by VSYS_1,Wrist lifting requires the use of sensors.
+    // BSP_GPIO_Set(38, 0, 1);//The sensor is powered by VSYS_1,Wrist lifting requires the use of sensors.
     BSP_GPIO_Set(26, 0, 1); //3v3
 
     BSP_GPIO_Set(42, 0, 1);  //Audio
@@ -66,8 +66,9 @@ void BSP_LCD_PowerUp(void)
     HAL_PIN_Set(PAD_PA38, GPIO_A38, PIN_NOPULL, 1);
     HAL_PIN_Set(PAD_PA26, GPIO_A26, PIN_NOPULL, 1);
 
-    HAL_PIN_Set(PAD_PA10, GPIO_A10, PIN_PULLUP, 1);
-    HAL_PIN_Set(PAD_PA11, GPIO_A11, PIN_PULLUP, 1);
+    HAL_PIN_Set(PAD_PA10, I2C2_SCL, PIN_PULLUP, 1);
+    HAL_PIN_Set(PAD_PA11, I2C2_SDA, PIN_PULLUP, 1);
+
     //Audio
     HAL_PIN_Set(PAD_PA42, GPIO_A42, PIN_PULLUP, 1);
     BSP_GPIO_Set(42, 1, 1);  //Audio Power

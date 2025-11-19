@@ -6,6 +6,7 @@
 
 #include "bsp_board.h"
 
+
 #ifdef BSP_USING_PSRAM1
 /* APS 128p*/
 static void board_pinmux_psram_func0()
@@ -66,6 +67,7 @@ static void board_pinmux_psram_func1_2_4(int func)
     }
 #endif
 }
+
 
 /* APS 16p*/
 static void board_pinmux_psram_func3()
@@ -166,10 +168,10 @@ static void BSP_PIN_Common(void)
     // PA23 #XTAL32K_XO
 
     // // USBD
-
-    HAL_PIN_Set(PAD_PA35, USART3_TXD, PIN_PULLUP, 1);
-    HAL_PIN_Set(PAD_PA36, USART3_RXD, PIN_PULLUP, 1);
-
+    // HAL_PIN_Set_Analog(PAD_PA35, 1);                    // USB_DP
+    // HAL_PIN_Set_Analog(PAD_PA36, 1);                    // USB_DM
+    HAL_PIN_Set(PAD_PA35, GPIO_A35, PIN_PULLDOWN, 1);
+    HAL_PIN_Set(PAD_PA36, GPIO_A36, PIN_PULLDOWN, 1);
     // SPI1(TF card)
     HAL_PIN_Set(PAD_PA24, SPI1_DIO, PIN_NOPULL, 1);
     HAL_PIN_Set(PAD_PA25, SPI1_DI,  PIN_PULLDOWN, 1);
@@ -259,6 +261,7 @@ void BSP_PIN_LCD(void)
 // #error LCD type not supported in this board.
 #endif
 
+
 }
 
 void BSP_PIN_Init(void)
@@ -268,4 +271,5 @@ void BSP_PIN_Init(void)
     BSP_PIN_LCD();
 
 }
+
 
