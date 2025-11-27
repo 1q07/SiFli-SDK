@@ -960,8 +960,6 @@ static void musb_urb_waitup(struct usbh_urb *urb)
     struct musb_pipe *pipe;
 
     pipe = (struct musb_pipe *)urb->hcpriv;
-    pipe->urb = NULL;
-    urb->hcpriv = NULL;
 
     if (urb->timeout) {
         usb_osal_sem_give(pipe->waitsem);
