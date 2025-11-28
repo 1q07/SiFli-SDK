@@ -127,11 +127,23 @@ static void pairing_failed(struct bt_conn *conn, enum bt_security_err reason)
     bt_conn_disconnect(conn, BT_HCI_ERR_AUTH_FAIL);
 }
 
+static void auth_bt_linkey(struct bt_conn *conn, uint8_t *lebr_key)
+{
+    char addr[BT_ADDR_LE_STR_LEN];
+    char key_str[36];
+
+    bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+    memset(key_str, 0, sizeof(key_str));
+    bin2hex(lebr_key, 16, key_str, 36);
+    printk("BT link key for %s: %s\n", addr, key_str);
+}
+
 static struct bt_conn_auth_cb auth_cb_display =
 {
     .passkey_display = auth_passkey_display,
     .passkey_entry = NULL,
     .cancel = auth_cancel,
+    .le_br_key = auth_bt_linkey,
 };
 
 static struct bt_conn_auth_info_cb auth_cb_info =
