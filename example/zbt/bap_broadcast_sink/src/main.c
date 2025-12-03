@@ -27,7 +27,7 @@ int main(void)
     audio_server_set_private_volume(AUDIO_TYPE_BT_MUSIC, DEFAULT_VOLUME);
     while (1)
     {
-        err = bap_broadcast_sink_start();
+        err = bap_broadcast_sink_start(0);
         if (err)
         {
             printk("start bap sink failed\n");
