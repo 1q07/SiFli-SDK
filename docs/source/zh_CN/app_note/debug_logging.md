@@ -224,20 +224,20 @@ UART口的pinmux配置此处不做赘述，详见 [](../hal/uart.md)
 
 void busmon_cbk()
 {
-    rt_kprintf("Busmon captured\n");        // 当总线特定访问时，产生回掉处理。用户可以在这里Assert，进一步调试分析。
+    rt_kprintf("Busmon captured\n");        // 当总线特定访问时，产生回调处理。用户可以在这里Assert，进一步调试分析。
 }
 
 ...
 
-    dbg_busmon_reg_callback(busmon_cbk);       // 注册回掉
+    dbg_busmon_reg_callback(busmon_cbk);       // 注册回调
     dbg_busmon_read(0x20080000,1);             // 第一次读取0x20080000地址的时候，触发总线监视器
     
     // 重新配置
-    dbg_busmon_reg_callback(busmon_cbk);       // 注册回掉
+    dbg_busmon_reg_callback(busmon_cbk);       // 注册回调
     dbg_busmon_write(0x20080004,3);            // 第三次写0x20080004地址的时候，触发总线监视器
 
     // 重新配置
-    dbg_busmon_reg_callback(busmon_cbk);       // 注册回掉
+    dbg_busmon_reg_callback(busmon_cbk);       // 注册回调
     dbg_busmon_write(0x20080008,2);            // 第二次读或者写0x20080008地址的时候，触发总线监视器
 
 ```
