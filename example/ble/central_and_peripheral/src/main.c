@@ -57,6 +57,7 @@ typedef enum
 #define BLE_APP_MAX_CONN_COUNT 4
 #define APP_MAX_DESC 2
 #define BLE_APP_BIT_CONVERT_DIGIT_INC(n, m) (((n & (1 << m)) != 0) * (m+1))
+#define USING_LE_EXTENSION_ADV 1
 
 typedef struct
 {
@@ -255,6 +256,78 @@ static void ble_app_advertising_start(void)
 
     rt_free(para.rsp_data.completed_name);
     rt_free(para.adv_data.manufacturer_data);
+}
+
+static void ble_app_ext_advertising_start(void)
+{
+    sibles_advertising_para_t para = {0};
+    uint8_t ret;
+
+    char local_name[31] = {0};
+    uint8_t manu_additnal_data[] = {0x20, 0xC4, 0x00, 0x91};
+    uint16_t manu_company_id = SIG_SIFLI_COMPANY_ID;
+    bd_addr_t addr;
+    ret = ble_get_public_address(&addr);
+    if (ret == HL_ERR_NO_ERROR)
+        rt_snprintf(local_name, 31, "SIFLI_APP-%x-%x-%x-%x-%x-%x", addr.addr[0], addr.addr[1], addr.addr[2], addr.addr[3], addr.addr[4], addr.addr[5]);
+    else
+        memcpy(local_name, DEFAULT_LOCAL_NAME, sizeof(DEFAULT_LOCAL_NAME));
+
+    ble_gap_dev_name_t *dev_name = malloc(sizeof(ble_gap_dev_name_t) + strlen(local_name));
+    dev_name->len = strlen(local_name);
+    memcpy(dev_name->name, local_name, dev_name->len);
+    ble_gap_set_dev_name(dev_name);
+    free(dev_name);
+
+    para.own_addr_type = GAPM_STATIC_ADDR;
+    para.config.adv_mode = SIBLES_ADV_EXTENDED_MODE;
+
+    para.config.mode_config.extended_config.duration = 0;
+    para.config.mode_config.extended_config.interval = 0x30;
+
+    para.config.mode_config.extended_config.max_skip = 0;
+    para.config.mode_config.extended_config.phy = GAP_PHY_TYPE_LE_2M;
+    para.config.mode_config.extended_config.adv_sid = 0;
+    para.config.mode_config.extended_config.connectable_enable = 1;
+
+    para.config.max_tx_pwr = 0x7F;
+    /* Advertising will re-start after disconnected. */
+    // in multi-connection
+    para.config.is_auto_restart = 1;
+    /* Scan rsp data is same as advertising data. */
+    //para.config.is_rsp_data_duplicate = 1;
+
+    /* Prepare name filed. Due to name is too long to put adv data, put it to rsp data.*/
+    para.adv_data.completed_name = rt_malloc(rt_strlen(local_name) + sizeof(sibles_adv_type_name_t));
+    para.adv_data.completed_name->name_len = rt_strlen(local_name);
+    rt_memcpy(para.adv_data.completed_name->name, local_name, para.adv_data.completed_name->name_len);
+
+    /* Prepare manufacturer filed .*/
+    para.adv_data.manufacturer_data = rt_malloc(sizeof(sibles_adv_type_manufacturer_data_t) + sizeof(manu_additnal_data));
+    para.adv_data.manufacturer_data->company_id = manu_company_id;
+    para.adv_data.manufacturer_data->data_len = sizeof(manu_additnal_data);
+    rt_memcpy(para.adv_data.manufacturer_data->additional_data, manu_additnal_data, sizeof(manu_additnal_data));
+
+    /* service data example*/
+    uint16_t srv_data_len = 100;
+    uint16_t srv_uuid = SIG_SIFLI_COMPANY_ID;
+    para.adv_data.srv_data = rt_malloc(sizeof(sibles_adv_type_srv_data_t) + srv_data_len);
+    para.adv_data.srv_data->uuid.uuid_len = ATT_UUID_16_LEN;
+    rt_memcpy(para.adv_data.srv_data->uuid.uuid.uuid_16, &srv_uuid, ATT_UUID_16_LEN);
+    para.adv_data.srv_data->data_len = srv_data_len;
+    rt_memset(para.adv_data.srv_data->additional_data, 0x13, srv_data_len);
+
+    para.evt_handler = ble_app_advertising_event;
+
+    ret = sibles_advertising_init(g_app_advertising_context, &para);
+    if (ret == SIBLES_ADV_NO_ERR)
+    {
+        sibles_advertising_start(g_app_advertising_context);
+    }
+
+    rt_free(para.adv_data.completed_name);
+    rt_free(para.adv_data.manufacturer_data);
+    rt_free(para.adv_data.srv_data);
 }
 
 static void update_adv_content()
@@ -510,7 +583,11 @@ int main(void)
 
             ble_app_service_init();
             /* First enable connectable adv then enable non-connectable. */
+#ifdef USING_LE_EXTENSION_ADV
+            ble_app_ext_advertising_start();
+#else
             ble_app_advertising_start();
+#endif
             LOG_I("receive BLE power on!\r\n");
         }
     }
@@ -913,7 +990,12 @@ int ble_app_event_handler(uint16_t event_id, uint8_t *data, uint16_t len, uint32
         // subscribe data src. then subscribe notfi src.
         break;
     }
-
+    case BLE_GAP_REMOTE_PHY_IND:
+    {
+        ble_gap_remote_phy_ind_t *ind = (ble_gap_remote_phy_ind_t *)data;
+        LOG_I("read phy %d, rx %d, tx %d", ind->conn_idx, ind->rx_phy, ind->tx_phy);
+        break;
+    }
     default:
         break;
     }
@@ -1218,6 +1300,12 @@ int cmd_diss(int argc, char *argv[])
         else if (strcmp(argv[1], "adv_update") == 0)
         {
             update_adv_content();
+        }
+        else if (strcmp(argv[1], "read_phy") == 0)
+        {
+            ble_gap_get_phy_t phy;
+            phy.conn_idx = (uint8_t)atoi(argv[2]);
+            ble_gap_get_remote_physical(&phy);
         }
         else
         {

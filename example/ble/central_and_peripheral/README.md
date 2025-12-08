@@ -17,9 +17,12 @@
 对于rt_device的例程，还需要把本例程用到的配置开关列出来，比如PWM例程用到了PWM1，需要在onchip菜单里使能PWM1 -->
 1. 本例程的Finsh命令可以通过输入diss help来打印命令及使用方法。
 2. 作为从设备时开机会开启广播，广播名字以SIFLI_APP-xx-xx-xx-xx-xx-xx, 其中xx代表本设备的蓝牙地址。可以通过手机的BLE APP进行连接
-3. 作为主设备时，可以通过finsh命令搜索其他从设备，并发起连接。
-4. 作为GATT server时，可以在手机端进行write和read操作，或者使能CCCD，设备会每一秒更新一次特征值。
-5. 作为GATT client时，可以通过finsh命令搜索server的database并显示，并对特征值进行读或写的操作。
+3. 默认使用extension advertising，最多携带251字节的扩展数据。
+4. extension advertising的secondary advertising phy默认设置为2M，连接后直接使用2M PHY，可以减少一次PHY更新。
+5. 一些比较老的手机或其他设备，可能无法搜索extension广播，如果有需求，可以去掉USING_LE_EXTENSION_ADV
+6. 作为主设备时，可以通过finsh命令搜索其他从设备，并发起连接。
+7. 作为GATT server时，可以在手机端进行write和read操作，或者使能CCCD，设备会每一秒更新一次特征值。
+8. 作为GATT client时，可以通过finsh命令搜索server的database并显示，并对特征值进行读或写的操作。
 
 
 ### 硬件需求
@@ -81,5 +84,5 @@ please input the serial port num:5
 |版本 |日期   |发布说明 |
 |:---|:---|:---|
 |0.0.1 |01/2025 |初始版本 |
-| | | |
+|0.0.2 |12/2025 |默认使用扩展广播 |
 | | | |
