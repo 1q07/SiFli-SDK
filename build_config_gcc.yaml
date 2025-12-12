@@ -421,6 +421,14 @@ common_projects:
   - path: example/pm/bt/project/hcpu
     boards: *bt_boards
 
+  - path: example/pm/classical/project/hcpu
+    boards:
+      - sf32lb56-lcd_n16r12n1
+      # - sf32lb56-lcd_a128r12n1
+      - eh-lb551
+      - sf32lb52-lcd_n16r8
+      - sf32lb58-lcd_n16r64n4
+
   - path: example/pm/coremark/project/hcpu
     boards: *default_boards
 
@@ -445,14 +453,6 @@ common_projects:
 
   - path: example/rt_device/pdm/project
     boards: *525_devkit_lcd_boards
-
-  - path: example/rt_device/pm/project/hcpu
-    boards:
-      - sf32lb56-lcd_n16r12n1
-      # - sf32lb56-lcd_a128r12n1
-      - eh-lb551
-      - sf32lb52-lcd_n16r8
-      - sf32lb58-lcd_n16r64n4
 
   - path: example/rt_device/pwm/pwm/project
     boards: *525_devkit_lcd_boards
