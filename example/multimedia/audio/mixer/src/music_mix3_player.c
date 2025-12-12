@@ -152,9 +152,10 @@ static void deode_mp3(mix_stream_t *s)
 
 static inline void float2pcm(float *fl, uint32_t samples, int16_t *pcm)
 {
+    int32_t v;
     for (int i = 0; i < samples; i++)
     {
-        int16_t v = (int16_t)(*fl * 32767);
+        v = (int32_t)(*fl * 32767);
         if (v > 32767)
         {
             v = 32767;
@@ -163,7 +164,7 @@ static inline void float2pcm(float *fl, uint32_t samples, int16_t *pcm)
         {
             v = -32768;
         }
-        *pcm++ = v;
+        *pcm++ = (int16_t)v;
         *fl++;
     }
 }
