@@ -78,6 +78,13 @@ extern "C" {
 #define PWM2_CC2_DMA_PDATAALIGN                       DMA_PDATAALIGN_HALFWORD
 #define PWM2_CC2_DMA_MDATAALIGN                       DMA_MDATAALIGN_HALFWORD
 
+#define PWMA1_CC1_DMA_IRQHandler              DMAC1_CH2_IRQHandler
+#define PWMA1_CC1_DMA_IRQ_PRIO                1
+#define PWMA1_CC1_DMA_INSTANCE                DMA1_Channel3
+#define PWMA1_CC1_DMA_IRQ                     DMAC1_CH2_IRQn
+#define PWMA1_CC1_DMA_PDATAALIGN              DMA_PDATAALIGN_HALFWORD
+#define PWMA1_CC1_DMA_MDATAALIGN              DMA_MDATAALIGN_HALFWORD
+
 /* DMA1 channel3 */
 #define FLASH3_IRQHandler              DMAC1_CH3_IRQHandler
 #define FLASH3_DMA_IRQ_PRIO            0
@@ -171,8 +178,11 @@ extern "C" {
 #define AUDCODEC_DAC0_DMA_REQUEST           DMA_REQUEST_9
 #define AUDCODEC_DAC1_DMA_REQUEST           DMA_REQUEST_10
 #define GPTIM2_UPDATE_DMA_REQUEST           DMA_REQUEST_11
+#define PWM3_UPDATE_DMA_REQUEST             DMA_REQUEST_11
 #define GPTIM2_TRIGGER_DMA_REQUEST          DMA_REQUEST_12
+#define PWM3_TRIGGER_DMA_REQUEST            DMA_REQUEST_12
 #define GPTIM2_CC1_DMA_REQUEST              DMA_REQUEST_13
+#define PWM3_CC1_DMA_REQUEST                DMA_REQUEST_13//GTIM2_CH1
 #define AUDPRC_TX_OUT1_DMA_REQUEST          DMA_REQUEST_14
 #define AUDPRC_TX_OUT0_DMA_REQUEST          DMA_REQUEST_15
 #define AUDPRC_TX3_DMA_REQUEST              DMA_REQUEST_16
@@ -448,6 +458,22 @@ extern "C" {
 #define PWM4_CC4_DMA_MDATAALIGN                       DMA_MDATAALIGN_HALFWORD
 #endif
 
+#if defined(BSP_PWM3_UPDATE_USING_DMA) && !defined(PWM3_UPDATE_DMA_INSTANCE)
+#define PWM3_UPDATE_DMA_IRQHandler          DMAC1_CH3_IRQHandler
+#define PWM3_UPDATE_DMA_IRQ_PRIO          1
+#define PWM3_UPDATE_DMA_INSTANCE          DMA1_Channel3
+#define PWM3_UPDATE_DMA_IRQ               DMAC1_CH3_IRQn
+#define PWM3_UPDATE_DMA_PDATAALIGN        DMA_PDATAALIGN_HALFWORD
+#define PWM3_UPDATE_DMA_MDATAALIGN        DMA_MDATAALIGN_HALFWORD
+#endif
+#if defined(BSP_PWM3_CC1_USING_DMA) && !defined(PWM3_CC1_DMA_INSTANCE)
+#define PWM3_CC1_DMA_IRQHandler        DMAC1_CH3_IRQHandler
+#define PWM3_CC1_DMA_IRQ_PRIO          1
+#define PWM3_CC1_DMA_INSTANCE          DMA1_Channel3
+#define PWM3_CC1_DMA_IRQ               DMAC1_CH3_IRQn
+#define PWM3_CC1_DMA_PDATAALIGN        DMA_PDATAALIGN_HALFWORD
+#define PWM3_CC1_DMA_MDATAALIGN        DMA_MDATAALIGN_HALFWORD
+#endif
 /* DMA3 channel4  */
 #if defined(BSP_SPI3_TX_USING_DMA) && !defined(SPI3_TX_DMA_INSTANCE)
 #define SPI3_DMA_TX_IRQHandler         DMAC3_CH4_IRQHandler
