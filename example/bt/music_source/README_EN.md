@@ -22,7 +22,7 @@ The example will enable Bluetooth by default at startup and is controlled via FI
 
 1. Play local music:
 Use the command `music play_default` to play the pre-installed .mp3 file. If no Bluetooth devices like headphones are connected, audio will be output directly from the speaker.
-To play songs from the file system, use `music play [loop_time] [path]`, for example `music play 3 \A.mp3` will play A.mp3 from the root partition 3 times.
+To play songs from the file system, use `music play [loop_time] [path]`, for example `music play 3 \A.mp3` will play A.mp3 from the root partition 4 times (loop_time+1) .
 
 2. Search for Bluetooth devices:
 Use the command `music inquiry start` to search for headphone-type Bluetooth devices. This command will only report devices with COD Major Class 0x000400 (Audio device).
