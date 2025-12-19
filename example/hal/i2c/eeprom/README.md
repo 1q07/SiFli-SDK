@@ -2,9 +2,9 @@
 源码路径：example/hal/i2c/eeprom
 ## 支持的平台
 例程可以运行在以下开发板.
-* sf32lb52-lcd_n16r8
-* sf32lb58-lcd_n16r64n4
-* sf32lb56-lcd_n16r12n1
+* sf32lb52-lcd
+* sf32lb58-lcd
+* sf32lb56-lcd
 
 ## 概述
 * 通过对EEPROM芯片AT24CO8SC模块的读写操作进行I2C Hal函数演示
@@ -17,13 +17,14 @@ AT24CO8SC的SDA,SCK分别按照下表，根据开发板型号进行连接
 
 |开发板    |SDA管脚|SDA管脚名称|SCL管脚|SCL管脚名称|
 |:---     |:---    |:---     |:---   |:---      |
-|sf32lb52-lcd_n16r8 |3       |PA42     |5      |PA41      |
-|sf32lb58-lcd_n16r64n4 |3 (CONN1)   |PB29     |5 (CONN1)  |PB28      |
-|sf32lb56-lcd_n16r12n1 |3       |PA12     |5      |PA20      |
+|sf32lb52-lcd |3       |PA42     |5      |PA41      |
+|sf32lb58-lcd |3 (CONN1)   |PB29     |5 (CONN1)  |PB28      |
+|sf32lb56-lcd |3       |PA12     |5      |PA20      |
 
 * 更详细的引脚定义请参考
-`[sf32lb52-lcd_n16r8]()`
-`[sf32lb58-lcd_n16r64n4]()`
+[sf32lb52-lcd](https://wiki.sifli.com/board/sf32lb52x/SF32LB52-DevKit-LCD.html)
+[sf32lb56-lcd](https://wiki.sifli.com/board/sf32lb56x/SF32LB56-DevKit-LCD.html)
+[sf32lb58-lcd](https://wiki.sifli.com/board/sf32lb58x/SF32LB58-DevKit-LCD.html)
 
 * AT24C08SC
 ![alt text](assets/at24c08sc.png)
