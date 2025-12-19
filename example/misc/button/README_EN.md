@@ -56,6 +56,8 @@ button52
 ![button52](./assets/button_Schematic_52.png)
 button587
 ![button587](./assets/button_Schematic_587.png)
+button56
+![button587](./assets/button_Schematic_56.png)
 
 #### Button Configuration Process
 ```c
@@ -65,14 +67,10 @@ static void button_event_handler(int32_t pin, button_action_t action)
 }
 
 
+// Initialization button
+    button_cfg_t cfg;
 
-button_cfg_t cfg;
-
-#if defined(BSP_USING_BOARD_EM_LB525XXX)
-    cfg.pin = 34;
-#elif defined (BSP_USING_BOARD_EM_LB587XXX)
-    cfg.pin = 152;
-#endif
+    cfg.pin = BSP_KEY1_PIN;
     cfg.active_state = BUTTON_ACTIVE_HIGH;
     cfg.mode = PIN_MODE_INPUT;
     cfg.button_handler = button_event_handler;
@@ -81,11 +79,7 @@ button_cfg_t cfg;
     RT_ASSERT(SF_EOK == button_enable(id));
 
 
-#if defined(BSP_USING_BOARD_EM_LB525XXX)
-    cfg.pin = 11;
-#elif defined (BSP_USING_BOARD_EM_LB587XXX)
-    cfg.pin = 150;
-#endif
+    cfg.pin = BSP_KEY2_PIN;
     cfg.active_state = BUTTON_ACTIVE_HIGH;
     cfg.mode = PIN_MODE_INPUT;
     cfg.button_handler = button_event_handler;
@@ -93,6 +87,7 @@ button_cfg_t cfg;
     RT_ASSERT(id >= 0);
     RT_ASSERT(SF_EOK == button_enable(id));
 ```
+* Pay attention The pin numbers of `BSP_KEY1_PIN` and `BSP_KEY2_PIN` are derived from the `board.conf` configuration used during compilation, such as `sf32lb52-lcd_n16r8`. We can view this information in the file `sf32lb52-lcd_n16r8/hcpu/board.conf`.
 
 #### Button Pin Parameter Modification
 
