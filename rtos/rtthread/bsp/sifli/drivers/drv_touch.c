@@ -170,6 +170,10 @@ static void touch_api_unlock(void)
 #include "data_service.h"
 #include "pin_service.h"
 
+#if TOUCH_IRQ_PIN < GPIO1_PIN_NUM
+    #error "TOUCH_IRQ_PIN is in HCPU, BSP_TOUCH_IRQ_FROM_DATASVC should be disabled in menuconfig."
+#endif
+
 static datac_handle_t pin_irq_service;
 static uint8_t pin_irq_service_connect_state = 0; // 0 - not connect, 1 - connecting, 2 - connected, 3 - connect error
 static void (*irq_pin_hdr)(void *args);
