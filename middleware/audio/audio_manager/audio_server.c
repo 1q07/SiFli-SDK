@@ -68,9 +68,11 @@
 #define PRIVATE_DEFAULT_VOLUME              10
 
 #ifdef PKG_USING_SOUNDPLUS
+    #define MIC_NOISE_DROP_FRAMES           16
     #define CODEC_DATA_UNIT_LEN             (480)
     #define AUDIO_SERVER_STACK_SIZE         (4096)
 #else
+    #define MIC_NOISE_DROP_FRAMES           25
     #define CODEC_DATA_UNIT_LEN             (320)
     #define AUDIO_SERVER_STACK_SIZE         (9 * 1024)
 #endif
@@ -85,6 +87,23 @@
 #define FADE_INTERVAL_MS        10
 
 #define AUDIO_DATA_CAPTURE_UART
+//#define AUDIO_DATA_CAPTURE_FILE
+
+#if RT_USING_DFS
+    #ifndef FILE_ADUMP_DOWNLINK
+        #define FILE_ADUMP_DOWNLINK         "/dump_downlink.pcm"
+        #define FILE_ADUMP_DOWNLINK_AGC     "/dump_downlink_agc.pcm"
+        #define FILE_ADUMP_AUDPRC           "/dump_audprc.pcm"
+        #define FILE_ADUMP_DC_OUT           "/dump_dc_out.pcm"
+        #define FILE_ADUMP_RAMP_IN_OUT       "/dump_ramp_in_out.pcm"
+        #define FILE_ADUMP_AECM_INPUT1       "/dump_aecm_input1.pcm"
+        #define FILE_ADUMP_AECM_INPUT2       "/dump_aecm_input2.pcm"
+        #define FILE_ADUMP_AECM_OUT          "/dump_aecm_out.pcm"
+        #define FILE_ADUMP_ANS_OUT           "/dump_ans_out.pcm"
+        #define FILE_ADUMP_AGC_OUT           "/dump_agc_out.pcm"
+        #define FILE_ADUMP_RAMP_OUT_OUT      "/dump_ramp_out_out.pcm"
+    #endif
+#endif
 
 #if defined (AUDIO_DATA_CAPTURE_UART) && defined (RT_USING_FINSH)
 
@@ -649,7 +668,7 @@ static void inline speaker_update_volume(audio_device_speaker_t *my, int16_t spf
                 vol = 0;
             }
 #endif
-            if (audio_type == AUDIO_TYPE_BT_VOICE)
+            if (audio_type == AUDIO_TYPE_BT_VOICE || audio_type == AUDIO_TYPE_MODEM_VOICE)
                 volx2 = eq_get_tel_volumex2(vol);
             else
                 volx2 = eq_get_music_volumex2(vol);
@@ -875,7 +894,7 @@ static inline void process_speaker_rx(audio_server_t *server, audio_device_speak
         return;
     }
 
-#if defined (AUDIO_DATA_CAPTURE_UART) && defined (RT_USING_FINSH)
+#if defined (AUDIO_DATA_CAPTURE_UART) && defined (RT_USING_FINSH) && !defined(AUDIO_DATA_CAPTURE_FILE)
     if (p_audio_dump && audio_dump_len)
     {
         audio_data_write_uart();
@@ -910,7 +929,7 @@ static inline void process_speaker_rx(audio_server_t *server, audio_device_speak
     if (my->is_need_3a)
     {
 #ifndef AUDIO_RX_USING_PDM
-        if (my->rx_drop_cnt < 25)
+        if (my->rx_drop_cnt < MIC_NOISE_DROP_FRAMES)
         {
             my->rx_drop_cnt++;
             memset(my->rx_data_tmp, 0, readlen);
@@ -1355,17 +1374,21 @@ static void start_txrx(audio_device_speaker_t *my)
         my->tx_ready = 1;
     }
 #else
-    //6. DAC mute
-    rt_device_control(my->audcodec_dev, AUDIO_CTL_MUTE, (void *)1);
-
 #if START_RX_IN_TX_INTERUPT
-    //7 DAC start
+#if defined(AUDIO_TX_USING_I2S)
+    stream = AUDIO_STREAM_REPLAY;
+    rt_device_control(my->i2s, AUDIO_CTL_START, &stream);
+#else
+    // 6. DAC mute
+    rt_device_control(my->audcodec_dev, AUDIO_CTL_MUTE, (void *)1);
+    // 7 DAC start
     stream = AUDIO_STREAM_REPLAY | ((1 << HAL_AUDPRC_TX_CH0) << 8);
     LOG_I("speaker START stream=0x%x", stream);
     rt_device_control(my->audprc_dev, AUDIO_CTL_START, (void *)&stream);
     stream = AUDIO_STREAM_REPLAY | ((1 << HAL_AUDCODEC_DAC_CH0) << 8);
     LOG_I("codec START stream=0x%x", stream);
     rt_device_control(my->audcodec_dev, AUDIO_CTL_START, &stream);
+#endif
     my->opened_map_flag |= OPEN_MAP_TX;
     my->tx_ready = 1;
     //wait rx start
@@ -3425,7 +3448,7 @@ void audio_server_entry()
                 second = device_get_tx_in_running(speaker, 1);
                 client_mix_process(first, second, speaker);
 #else
-                /* some thirty lib use as_callback_cmd_cache_empty only */
+                /* some thirty lib use as_callback_cmd_cache_half_empty only */
                 audio_server_callback_cmt_t cmd = as_callback_cmd_cache_empty;
                 if (evt & AUDIO_SERVER_EVENT_TX_HALF_EMPTY)
                 {
@@ -4239,6 +4262,63 @@ int is_audio_dump_enable_type(audio_dump_type_t type)
         return 1;
     return 0;
 }
+
+static const char *audio_files[] =
+{
+    FILE_ADUMP_DOWNLINK,
+    FILE_ADUMP_DOWNLINK_AGC,
+    FILE_ADUMP_AUDPRC,
+    FILE_ADUMP_DC_OUT,
+    FILE_ADUMP_RAMP_IN_OUT,
+    FILE_ADUMP_AECM_INPUT1,
+    FILE_ADUMP_AECM_INPUT2,
+    FILE_ADUMP_AECM_OUT,
+    FILE_ADUMP_ANS_OUT,
+    FILE_ADUMP_AGC_OUT,
+    FILE_ADUMP_RAMP_OUT_OUT,
+    NULL,
+};
+
+extern uint32_t g_record_time;
+
+void audio_dump_stop()
+{
+#if RT_USING_DFS
+    uint32_t  data_record[3] = {0x55667788, 0, 0};
+    for (int i = 0; i < ADUMP_NUM; i++)
+    {
+        audio_dump_ctrl_t *p = &audio_dump_debug[i];
+        p->dump_end = 1;
+        if (p->fd >= 0)
+        {
+            lseek(p->fd, 0, SEEK_END);
+            data_record[1] = p->cur_frame;
+            data_record[2] = p->max_frame;
+            write(p->fd, data_record, sizeof(data_record));
+            close(p->fd);
+            p->fd = -1;
+            LOG_I("--dump close %s", audio_files[i]);
+        }
+    }
+#endif
+}
+
+void audio_dump_start()
+{
+#if RT_USING_DFS
+    for (int i = 0; i < ADUMP_NUM; i++)
+    {
+        audio_dump_ctrl_t *p = &audio_dump_debug[i];
+        p->dump_end = 0;
+        if (p->fd >= 0)
+        {
+            close(p->fd);
+            p->fd = -1;
+            LOG_I("--dump close %s", audio_files[i]);
+        }
+    }
+#endif
+}
 void audio_dump_data(audio_dump_type_t type, uint8_t *fifo, uint32_t size)
 {
     audio_dump_ctrl_t *p = &audio_dump_debug[type];
@@ -4252,6 +4332,113 @@ void audio_dump_data(audio_dump_type_t type, uint8_t *fifo, uint32_t size)
         return;
     }
 #endif
+#if RT_USING_DFS
+    if (p->dump_enable && p->dump_end == 0)
+    {
+        if (p->fd < 0)
+        {
+            p->fd = open(audio_files[type], O_RDWR | O_CREAT | O_TRUNC | O_BINARY);
+            if (p->fd < 0)
+            {
+                LOG_I("dump open %s error", audio_files[type]);
+            }
+            else
+            {
+#if defined (SOLUTION_WATCH) && (defined (SOLUTION_RES_USING_NAND) || defined (EX_RES_USING_FILE_MODE))
+                //clean ramfs file in freelist.
+                extern int app_fs_delete_all_file_from_freelist(void);
+                app_fs_delete_all_file_from_freelist();
+#endif
+                p->dump_start = rt_tick_get();
+                p->max_frame = g_record_time * 1024 / 10;
+                p->cur_frame = 0;
+                if (0 != ioctl(p->fd, F_RESERVE_CONT_SPACE, g_record_time * 32 * 1024 + 2048))
+                {
+                    LOG_I("%s reserved space %d error", audio_files[type], g_record_time * 32 * 1024 + 2048);
+                }
+                //LOG_I("dump open %s succ", audio_files[type]);
+            }
+        }
+
+        if ((p->fd >= 0))
+        {
+            lseek(p->fd, p->cur_frame * size, SEEK_SET);
+            int ret = write(p->fd, fifo, size);
+            if (ret != size)
+            {
+                LOG_I("%s dump data write %d error!!!", audio_files[type], p->cur_frame);
+            }
+            p->cur_frame++;
+            if (p->cur_frame >= p->max_frame)
+            {
+                p->cur_frame -= p->max_frame;
+            }
+#if 1
+            if (0 == ret || rt_tick_get() - p->dump_start > g_record_time * 1000)
+            {
+                LOG_I("%s end!!!", audio_files[type]);
+                p->dump_end = 1;
+                close(p->fd);
+                p->fd = -1;
+            }
+#endif
+            //LOG_I("%s p->fd %d", audio_files[type], p->fd);
+        }
+    }
+#endif
+}
+
+/*
+apk from index 1 to ADUMP_NUM
+*/
+void audio_dump_enable(uint8_t type)
+{
+#if RT_USING_DFS
+    type--;
+    RT_ASSERT(type < ADUMP_NUM);
+    audio_dump_ctrl_t *p = &audio_dump_debug[type];
+    p->dump_enable = 0;
+    p->dump_end = 1;
+    if (p->fd >= 0)
+    {
+        close(p->fd);
+        p->fd = -1;
+    }
+
+    p->dump_enable = DUMP_BLE;
+    p->dump_end = 0;
+    LOG_I("--dump %s enable", audio_files[type]);
+
+#endif
+}
+
+void audio_dump_clear()
+{
+#if RT_USING_DFS
+    for (int i = 0; i < ADUMP_NUM; i++)
+    {
+        audio_dump_ctrl_t *p = &audio_dump_debug[i];
+        p->dump_enable = 0;
+        p->dump_end = 1;
+        if (p->fd >= 0)
+        {
+            close(p->fd);
+            p->fd = -1;
+        }
+        if (audio_files[i])
+        {
+            unlink(audio_files[i]);
+            LOG_I("--dump clear %s", audio_files[i]);
+        }
+    }
+
+
+#endif
+}
+
+char **get_audio_dump_files()
+{
+    return (char **)&audio_files[0];
 }
 
 #if defined (AUDIO_DATA_CAPTURE_UART) && defined (RT_USING_FINSH)
@@ -4507,18 +4694,22 @@ int audio_data_cmd(int argc, char **argv)
             else if (0 == strcmp(argv[i], "-ans_out"))
             {
                 type = ADUMP_ANS_OUT;
+                rt_kprintf("dump enable: ans_out\n");
             }
             else if (0 == strcmp(argv[i], "-agc_out"))
             {
                 type = ADUMP_AGC_OUT;
+                rt_kprintf("dump enable: agc_out\n");
             }
             else if (0 == strcmp(argv[i], "-ramp_out_out"))
             {
                 type = ADUMP_RAMP_OUT_OUT;
+                rt_kprintf("dump enable: ramp_out_out\n");
             }
             else if (0 == strcmp(argv[i], "-pdm"))
             {
                 type = ADUMP_PDM_RX;
+                rt_kprintf("dump enable: pdm_rx\n");
             }
             else
             {
@@ -4530,8 +4721,11 @@ int audio_data_cmd(int argc, char **argv)
                 rt_kprintf("%s: was enabled!!! please stop it first\n", __func__);
                 return 0;
             }
-
+#ifdef AUDIO_DATA_CAPTURE_FILE
+            audio_dump_debug[type].dump_enable = DUMP_BLE;
+#else
             audio_dump_debug[type].dump_enable = DUMP_UART;
+#endif
         }
     }
 
@@ -4554,7 +4748,7 @@ int audio_data_cmd(int argc, char **argv)
 MSH_CMD_EXPORT_ALIAS(audio_data_cmd, audio_data, audio_data);
 #endif
 
-#if defined (RT_USING_FINSH)
+#if defined(RT_USING_FINSH)
 int ae_log(int argc, char **argv)
 {
     if (argc == 1)
