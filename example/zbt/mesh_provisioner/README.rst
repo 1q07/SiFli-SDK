@@ -10,54 +10,84 @@ Overview
 This sample demonstrates how to use the Bluetooth Mesh APIs related to
 provisioning and using the Configuration Database (CDB). It is intended
 to be tested together with a device capable of being provisioned. For
-example, one could use the sample in
-:zephyr_file:`samples/bluetooth/mesh`
-or :zephyr_file:`tests/bluetooth/mesh_shell`.
+example, one could use the sample in `example/zbt/mesh` or `example/zbt/mesh_demo`.
 
-The application provisions itself and loads the CDB with an application
-key, then waits to receive an Unprovisioned Beacon from a device. If the
-board has a push button connected via GPIO and configured using the
-``sw0`` :ref:`devicetree <dt-guide>` alias, the application then waits
-for the user to press the button, which will trigger provisioning using
-PB-ADV. If the board doesn't have the push button, the sample will
-provision detected devices automatically. Once provisioning is done, the
-node will be present in the CDB but not yet marked as configured. The
-application will notice the unconfigured node and start configuring it.
-If no errors are encountered, the node is marked as configured.
+The application will self-provision and load the application key into 
+the CDB, then wait to receive unprovisioned beacons from devices. 
+It will use the 'mesh_btn 1' command to trigger the provisioning process 
+using the PB-ADV protocol. After provisioning is completed, the node will 
+appear in the CDB but will not yet be marked as "configured." The 
+application will detect this unconfigured node and begin configuring 
+it. If no errors are encountered, the node will be marked as configured.
 
-The configuration of a node involves adding an application key, getting
-the composition data, and binding all its models to the application key.
+The node configuration process includes adding an application key, 
+retrieving its composition data, and binding all its models to that 
+application key.
 
 Requirements
 ************
 
-* A board with Bluetooth LE support, or
-* QEMU with BlueZ running on the host
+* A board with Bluetooth LE support
 
-Building and Running
-********************
+menuconfig Configuration
+************************
+1. Enable Bluetooth (`BLUETOOTH`):
+    - Path: Sifli middleware → Bluetooth
+    - Enable: Enable bluetooth
+        - Macro switch: `CONFIG_BLUETOOTH`
+        - Description: Enables Bluetooth functionality
+2. Enable GAP, GATT Client, BLE connection manager:
+    - Path: Sifli middleware → Bluetooth → Bluetooth service → BLE 
+    service
+    - Enable: Enable BLE GAP central role
+        - Macro switch: `CONFIG_BLE_GAP_CENTRAL`
+        - Description: Switch for BLE CENTRAL (central device). When 
+        enabled, it provides scanning and active connection initiation 
+        with peripherals.
+    - Enable: Enable BLE GATT client
+        - Macro switch: `CONFIG_BLE_GATT_CLIENT`
+        - Description: Switch for GATT CLIENT. When enabled, it can 
+        actively search and discover services, read/write data, and 
+        receive notifications.
+    - Enable: Enable BLE connection manager
+        - Macro switch: `CONFIG_BSP_BLE_CONNECTION_MANAGER`
+        - Description: Provides BLE connection control management, 
+        including multi-connection management, BLE pairing, link 
+        connection parameter updates, etc.
+3. Enable NVDS:
+    - Path: Sifli middleware → Bluetooth → Bluetooth service → Common 
+    service
+    - Enable: Enable NVDS synchronous
+        - Macro switch: `CONFIG_BSP_BLE_NVDS_SYNC`
+        - Description: Bluetooth NVDS synchronization. When Bluetooth 
+        is configured to HCPU, BLE NVDS can be accessed synchronously, 
+        so enable this option; when Bluetooth is configured to LCPU, 
+        this option needs to be disabled.
 
-This sample can be found under
-:zephyr_file:`samples/bluetooth/mesh_provisioner` in the Zephyr tree.
 
-When receive unprovisioned beacon, input "mesh_btn 1" to start provisioning.
+Compilation and Flashing
+************************
 
-See :zephyr:code-sample-category:`bluetooth` samples for details on
-how to run the sample inside QEMU.
+Navigate to the example project directory and run the scons command to 
+compile:
+```c
+> scons --board=eh-lb525 -j32
+```
+Navigate to the example's `project/build_xx` directory, run 
+`uart_download.bat`, and select the port as prompted to download:
+```c
+$ ./uart_download.bat
 
-For other boards, build and flash the application as follows:
+     Uart Download
 
-.. zephyr-app-commands::
-   :zephyr-app: samples/bluetooth/mesh_provisioner
-   :board: <board>
-   :goals: flash
-   :compact:
+please input the serial port num:5
+```
 
-Refer to your :ref:`board's documentation <boards>` for alternative
-flash instructions if your board doesn't support the ``flash`` target.
+Expected Results
+****************
 
-To run the application on an :ref:`nrf5340dk_nrf5340`, a Bluetooth controller application
-must also run on the network core. The :zephyr:code-sample:`bluetooth_hci_ipc` sample
-application may be used. Build this sample with configuration
-:zephyr_file:`samples/bluetooth/hci_ipc/nrf5340_cpunet_bt_mesh-bt_ll_sw_split.conf`
-to enable mesh support.
+After the example starts:
+1. It can scan for beacons from unprovisioned devices and use 
+'mesh_btn 1' command to provision them.
+2. Provisioned devices can send and receive messages within the same 
+network.

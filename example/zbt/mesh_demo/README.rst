@@ -18,14 +18,6 @@ Because of the hard-coded values, the application is not suitable for
 production use, but is quite convenient for quick demonstrations of mesh
 functionality.
 
-The application has some features especially designed for the BBC
-micro:bit boards, such as the ability to send messages using the board's
-buttons as well as showing information of received messages on the
-board's 5x5 LED display. It's generally recommended to use unicast
-addresses in the range of 0x0001-0x0009 for the micro:bit since these
-map nicely to displayed addresses and the list of destination addresses
-which can be cycled with a button press.
-
 A special address, 0x000f, will make the application become a heart-beat
 publisher and enable the other nodes to show information of the received
 heartbeat messages.
@@ -33,31 +25,53 @@ heartbeat messages.
 Requirements
 ************
 
-* A board with Bluetooth LE support, or
-* QEMU with BlueZ running on the host
+* one more board with Bluetooth LE support
 
-Building and Running
-********************
+menuconfig Configuration
+************************
+1. Enable Bluetooth (`BLUETOOTH`):
+    - Path: Sifli middleware → Bluetooth
+    - Enable: Enable bluetooth
+        - Macro switch: `CONFIG_BLUETOOTH`
+        - Description: Enables Bluetooth functionality
+2. Enable GAP, GATT Client, BLE connection manager:
+    - Path: Sifli middleware → Bluetooth → Bluetooth service → BLE 
+    service
+    - Enable: Enable BLE GAP central role
+        - Macro switch: `CONFIG_BLE_GAP_CENTRAL`
+        - Description: Switch for BLE CENTRAL (central device). When 
+        enabled, it provides scanning and active connection initiation 
+        with peripherals.
+    - Enable: Enable BLE GATT client
+        - Macro switch: `CONFIG_BLE_GATT_CLIENT`
+        - Description: Switch for GATT CLIENT. When enabled, it can 
+        actively search and discover services, read/write data, and 
+        receive notifications.
+    - Enable: Enable BLE connection manager
+        - Macro switch: `CONFIG_BSP_BLE_CONNECTION_MANAGER`
+        - Description: Provides BLE connection control management, 
+        including multi-connection management, BLE pairing, link 
+        connection parameter updates, etc.
+3. Enable NVDS:
+    - Path: Sifli middleware → Bluetooth → Bluetooth service → Common 
+    service
+    - Enable: Enable NVDS synchronous
+        - Macro switch: `CONFIG_BSP_BLE_NVDS_SYNC`
+        - Description: Bluetooth NVDS synchronization. When Bluetooth 
+        is configured to HCPU, BLE NVDS can be accessed synchronously, 
+        so enable this option; when Bluetooth is configured to LCPU, 
+        this option needs to be disabled.
 
-This sample can be found under :zephyr_file:`samples/bluetooth/mesh_demo` in
-the Zephyr tree.
 
-See :zephyr:code-sample-category:`bluetooth` samples for details on how
-to run the sample inside QEMU.
+Compilation and Flashing
+************************
 
-For other boards, build and flash the application as follows:
+Change to the `mesh/project` directory and run the scons command to compile:
+::
+   scons --board=eh-lb525 -j8
 
-.. zephyr-app-commands::
-   :zephyr-app: samples/bluetooth/mesh_demo
-   :board: <board>
-   :goals: flash
-   :compact:
+Switch to the example project/build_xx directory, run uart_download.bat, 
+and follow the prompts to select the port to proceed with the flash.
 
-Refer to your :ref:`board's documentation <boards>` for alternative
-flash instructions if your board doesn't support the ``flash`` target.
-
-To run the application on an :ref:`nrf5340dk_nrf5340`, a Bluetooth controller application
-must also run on the network core. The :zephyr:code-sample:`bluetooth_hci_ipc` sample
-application may be used. Build this sample with configuration
-:zephyr_file:`samples/bluetooth/hci_ipc/nrf5340_cpunet_bt_mesh-bt_ll_sw_split.conf`
-to enable mesh support.
+::
+   ./uart_download.bat

@@ -1,4 +1,4 @@
-.. zephyr:code-sample:: nrf_bluetooth_mesh_onoff
+.. zephyr:code-sample:: ble_mesh_onoff
    :name: Mesh OnOff Model
    :relevant-api: bt_mesh
 
@@ -12,8 +12,7 @@ Each element has a mesh onoff client and server
 model which controls one of the 4 sets of buttons and LEDs .
 
 Prior to provisioning, an unprovisioned beacon is broadcast that contains
-a unique UUID. It is obtained from the device address set by Nordic in the
-FICR. Each button controls the state of its
+a unique UUID. Each button controls the state of its
 corresponding LED and does not initiate any mesh activity.
 
 The models for button 1 and LED 1 are in the node's root element.
@@ -21,80 +20,75 @@ The 3 remaining button/LED pairs are in elements 1 through 3.
 Assuming the provisioner assigns 0x100 to the root element,
 the secondary elements will appear at 0x101, 0x102 and 0x103.
 
-After provisioning, the button clients must
-be configured to publish and the LED servers to subscribe.
+After provisioning, the button clients must be configured to 
+publish and the LED servers to subscribe.
 
 If a LED server is provided with a publish address, it will
 also publish its status on an onoff state change.
 
-If a button is pressed only once within a 1 second interval, it sends an
-"on" message. If it is pressed more than once, it
-sends an "off" message. The buttons are quite noisy and are debounced in
-the button_pressed() interrupt handler. An interrupt within 250ms of the
-previous is discarded. This might seem a little clumsy, but the alternative of
-using one button for "on" and another for "off" would reduce the number
-of onoff clients from 4 to 2.
-
 Requirements
 ************
 
-This sample has been tested on the Nordic nRF52840-PDK board, but would
-likely also run on the nrf52dk/nrf52832 board.
+* Two or more board with Bluetooth LE support, and
+* A mobile phone with ble mesh app installed 
 
-Building and Running
-********************
+menuconfig Configuration
+************************
+1. Enable Bluetooth (`BLUETOOTH`):
+    - Path: Sifli middleware → Bluetooth
+    - Enable: Enable bluetooth
+        - Macro switch: `CONFIG_BLUETOOTH`
+        - Description: Enables Bluetooth functionality
+2. Enable GAP, GATT Client, BLE connection manager:
+    - Path: Sifli middleware → Bluetooth → Bluetooth service → BLE 
+    service
+    - Enable: Enable BLE GAP central role
+        - Macro switch: `CONFIG_BLE_GAP_CENTRAL`
+        - Description: Switch for BLE CENTRAL (central device). When 
+        enabled, it provides scanning and active connection initiation 
+        with peripherals.
+    - Enable: Enable BLE GATT client
+        - Macro switch: `CONFIG_BLE_GATT_CLIENT`
+        - Description: Switch for GATT CLIENT. When enabled, it can 
+        actively search and discover services, read/write data, and 
+        receive notifications.
+    - Enable: Enable BLE connection manager
+        - Macro switch: `CONFIG_BSP_BLE_CONNECTION_MANAGER`
+        - Description: Provides BLE connection control management, 
+        including multi-connection management, BLE pairing, link 
+        connection parameter updates, etc.
+3. Enable NVDS:
+    - Path: Sifli middleware → Bluetooth → Bluetooth service → Common 
+    service
+    - Enable: Enable NVDS synchronous
+        - Macro switch: `CONFIG_BSP_BLE_NVDS_SYNC`
+        - Description: Bluetooth NVDS synchronization. When Bluetooth 
+        is configured to HCPU, BLE NVDS can be accessed synchronously, 
+        so enable this option; when Bluetooth is configured to LCPU, 
+        this option needs to be disabled.
 
-This sample can be found under :zephyr_file:`samples/boards/nordic/mesh/onoff-app` in the
-Zephyr tree.
 
-The following commands build the application.
+Compilation and Flashing
+************************
 
-.. zephyr-app-commands::
-   :zephyr-app: samples/boards/nordic/mesh/onoff-app
-   :board: nrf52840dk/nrf52840
-   :goals: build flash
-   :compact:
+Change to the `mesh/project` directory and run the scons command to compile:
+::
+   scons --board=eh-lb525 -j8
 
-Prior to provisioning, each button controls its corresponding LED as one
-would expect with an actual switch.
+Switch to the example project/build_xx directory, run uart_download.bat, 
+and follow the prompts to select the port to proceed with the flash.
 
-Provisioning is done using the BlueZ meshctl utility. Below is an example that
-binds button 2 and LED 1 to application key 1. It then configures button 2
-to publish to group 0xc000 and LED 1 to subscribe to that group.
+::
+   ./uart_download.bat
 
-.. code-block:: console
 
-   discover-unprovisioned on
-   provision <discovered UUID>
-   menu config
-   target 0100
-   appkey-add 1
-   bind 0 1 1000                # bind appkey 1 to LED server on element 0 (unicast 0100)
-   sub-add 0100 c000 1000       # add subscription to group address c000 to the LED server
-   bind 1 1 1001                # bind appkey 1 to button 2 on element 1 (unicast 0101)
-   pub-set 0101 c000 1 0 0 1001 # publish button 2 to group address c000
+Expected Results
+****************
 
-The meshctl utility maintains a persistent JSON database containing
-the mesh configuration. As additional nodes (boards) are provisioned, it
-assigns sequential unicast addresses based on the number of elements
-supported by the node. This example supports 4 elements per node.
+After the example is launched:
 
-The first or root element of the node contains models for configuration,
-health, and onoff. The secondary elements only
-have models for onoff. The meshctl target for configuration must be the
-root element's unicast address as it is the only one that has a
-configuration server model.
+1. It can be discovered and provisioned via a BLE MESH APP on a mobile phone.
 
-If meshctl is gracefully exited, it can be restarted and reconnected to
-network 0x0.
+2. The device can simulate a button to publish messages to a specified address using the 'mesh_btn [publish_address] [led_status]' command.
 
-The meshctl utility also supports a onoff model client that can be used to
-change the state of any LED that is bound to application key 0x1.
-This is done by setting the target to the unicast address of the element
-that has that LED's model and issuing the onoff command.
-Group addresses are not supported.
-
-This application was derived from the sample mesh skeleton at
-:zephyr_file:`samples/bluetooth/mesh`.
-
-See :zephyr:code-sample-category:`bluetooth` samples for details.
+3. The device can subscribe to a specified address and receive published messages.

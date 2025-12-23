@@ -10,6 +10,7 @@ Overview
 This sample demonstrates Bluetooth Mesh functionality. It has several
 standard mesh models, and supports provisioning over both the
 Advertising and the GATT Provisioning Bearers (i.e. PB-ADV and PB-GATT).
+
 The application also needs a functioning serial console, since that's
 used for the Out-of-Band provisioning procedure.
 
@@ -22,40 +23,65 @@ to all nodes in the network when the button is pressed.
 Requirements
 ************
 
-* A board with Bluetooth LE support, or
-* QEMU with BlueZ running on the host
+* Two or more board with Bluetooth LE support, or
+* A mobile phone with ble mesh app installed and one
+* board with Bluetooth LE support
 
-Building and Running
-********************
+menuconfig Configuration
+************************
+1. Enable Bluetooth (`BLUETOOTH`):
+    - Path: Sifli middleware → Bluetooth
+    - Enable: Enable bluetooth
+        - Macro switch: `CONFIG_BLUETOOTH`
+        - Description: Enables Bluetooth functionality
+2. Enable GAP, GATT Client, BLE connection manager:
+    - Path: Sifli middleware → Bluetooth → Bluetooth service → BLE 
+    service
+    - Enable: Enable BLE GAP central role
+        - Macro switch: `CONFIG_BLE_GAP_CENTRAL`
+        - Description: Switch for BLE CENTRAL (central device). When 
+        enabled, it provides scanning and active connection initiation 
+        with peripherals.
+    - Enable: Enable BLE GATT client
+        - Macro switch: `CONFIG_BLE_GATT_CLIENT`
+        - Description: Switch for GATT CLIENT. When enabled, it can 
+        actively search and discover services, read/write data, and 
+        receive notifications.
+    - Enable: Enable BLE connection manager
+        - Macro switch: `CONFIG_BSP_BLE_CONNECTION_MANAGER`
+        - Description: Provides BLE connection control management, 
+        including multi-connection management, BLE pairing, link 
+        connection parameter updates, etc.
+3. Enable NVDS:
+    - Path: Sifli middleware → Bluetooth → Bluetooth service → Common 
+    service
+    - Enable: Enable NVDS synchronous
+        - Macro switch: `CONFIG_BSP_BLE_NVDS_SYNC`
+        - Description: Bluetooth NVDS synchronization. When Bluetooth 
+        is configured to HCPU, BLE NVDS can be accessed synchronously, 
+        so enable this option; when Bluetooth is configured to LCPU, 
+        this option needs to be disabled.
 
-This sample can be found under :zephyr_file:`samples/bluetooth/mesh` in the
-Zephyr tree.
 
-See :zephyr:code-sample-category:`bluetooth` samples for details on how
-to run the sample inside QEMU.
+Compilation and Flashing
+************************
 
-For other boards, build and flash the application as follows:
+Change to the `mesh/project` directory and run the scons command to compile:
+::
+   scons --board=eh-lb525 -j8
 
-.. zephyr-app-commands::
-   :zephyr-app: samples/bluetooth/mesh
-   :board: <board>
-   :goals: flash
-   :compact:
+Switch to the example project/build_xx directory, run uart_download.bat, 
+and follow the prompts to select the port to proceed with the flash.
 
-Refer to your :ref:`board's documentation <boards>` for alternative
-flash instructions if your board doesn't support the ``flash`` target.
+::
+   ./uart_download.bat
 
-To run the application on an :ref:`nrf5340dk_nrf5340`, a Bluetooth controller application
-must also run on the network core. The :zephyr:code-sample:`bluetooth_hci_ipc` sample
-application may be used. Build this sample with configuration
-:zephyr_file:`samples/bluetooth/hci_ipc/nrf5340_cpunet_bt_mesh-bt_ll_sw_split.conf`
-to enable mesh support.
 
 Interacting with the sample
 ***************************
 
-The sample can either be provisioned into an existing mesh network with an
-external provisioner device, or self-provision through a button press.
+The sample can either be provisioned into an existing mesh network by an  
+external provisioner device, or self-provisioned by sending 'mesh_btn' to simulate a button press.
 
 When provisioning with a provisioner device, the provisioner must give the
 device an Application key and bind it to both Generic OnOff models.
@@ -63,6 +89,19 @@ device an Application key and bind it to both Generic OnOff models.
 When self-provisioning, the device will take a random unicast address and
 bind a dummy Application key to these models.
 
-Once provisioned, messages to the Generic OnOff Server will be used to turn
-the LED on or off, and button presses will be used to broadcast OnOff
-messages to all nodes in the same network.
+After provisioning is complete, messages sent to the Generic OnOff Server model 
+will be used to turn the LED on or off, while simulating a button press by 
+sending the 'mesh_btn' command will be used to broadcast OnOff messages to 
+all nodes in the same network.
+
+Expected Results
+****************
+
+After the program starts:
+
+1.It can be discovered and provisioned by a phone via a BLE Mesh APP. 
+Once provisioning is complete, messages sent to the Generic OnOff Server 
+will be used to control the LED.
+
+2.The self‑provisioned device can broadcast OnOff messages to all nodes 
+in the same network through a virtual button.
