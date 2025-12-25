@@ -4332,7 +4332,7 @@ void audio_dump_data(audio_dump_type_t type, uint8_t *fifo, uint32_t size)
         return;
     }
 #endif
-#if RT_USING_DFS
+#if defined(RT_USING_DFS) && defined(AUDIO_DATA_CAPTURE_FILE)
     if (p->dump_enable && p->dump_end == 0)
     {
         if (p->fd < 0)
