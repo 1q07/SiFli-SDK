@@ -301,6 +301,7 @@ typedef struct
     uint8_t                     rx_channel_num;
     uint8_t                     is_eq_mute_volume;
     uint8_t                     tx_empty_cnt;
+    uint8_t                     is_wait_rx_start;
 
 #if DEBUG_FRAME_SYNC
     uint32_t                    debug_tx_index;
@@ -389,6 +390,7 @@ typedef struct
 
 /* ---------------global var-------------*/
 static int audio_pm_debug = 0;
+static int hfp_with_xiaozhi = 0;
 static audio_server_t g_server;
 static uint32_t audio_server_stack[AUDIO_SERVER_STACK_SIZE / 4];
 static uint32_t bt_downvoice_stack[DOWNLINK_STACK_SIZE / 4];
@@ -779,8 +781,12 @@ static inline void process_speaker_tx(audio_server_t *server, audio_device_speak
     if (my->tx_ready == 1)
     {
         my->tx_ready++;
-        start_rx(my);
-        rt_event_send(my->event, 1);
+        if (my->is_wait_rx_start)
+        {
+            my->is_wait_rx_start = 0;
+            start_rx(my);
+            rt_event_send(my->event, 1);
+        }
     }
 #endif
 
@@ -1346,6 +1352,9 @@ static void start_txrx(audio_device_speaker_t *my)
     int stream;
 #if defined(AUDIO_RX_USING_PDM)
     //7 DAC start
+#if START_RX_IN_TX_INTERUPT
+    my->is_wait_rx_start = 1;
+#endif
     stream = AUDIO_STREAM_REPLAY | ((1 << HAL_AUDPRC_TX_CH0) << 8);
     rt_device_control(my->audprc_dev, AUDIO_CTL_START, (void *)&stream);
     stream = AUDIO_STREAM_REPLAY | ((1 << HAL_AUDCODEC_DAC_CH0) << 8);
@@ -1375,6 +1384,7 @@ static void start_txrx(audio_device_speaker_t *my)
     }
 #else
 #if START_RX_IN_TX_INTERUPT
+    my->is_wait_rx_start = 1;
 #if defined(AUDIO_TX_USING_I2S)
     stream = AUDIO_STREAM_REPLAY;
     rt_device_control(my->i2s, AUDIO_CTL_START, &stream);
@@ -1517,11 +1527,9 @@ AUDIO_API void micbias_power_on()
     pa.read_samplerate = 16000;
     pa.read_cache_size = 0;
     pa.write_cache_size = 0;
+    pa.is_micbias_only = 1;
     g_micbias = audio_open(AUDIO_TYPE_LOCAL_RECORD, AUDIO_RX, &pa, NULL, NULL);
     RT_ASSERT(g_micbias);
-#ifdef BSP_AUDPRC_RX0_DMA
-    HAL_NVIC_DisableIRQ(AUDPRC_RX0_DMA_IRQ);
-#endif
 #else
 
     lock();
@@ -1746,9 +1754,7 @@ static int audio_device_speaker_open(void *user_data, audio_device_input_callbac
     else if (!need_tx_init && need_rx_init) // rx only
     {
         //6 ADC start
-        rt_base_t level = rt_hw_interrupt_disable();
         start_rx(my);
-        rt_hw_interrupt_enable(level);
     }
     else if (need_tx_init && need_rx_init)
     {
@@ -2993,6 +2999,10 @@ RT_WEAK void notify_dma_done_to_a2dp()
 static rt_err_t speaker_tx_done(rt_device_t dev, void *buffer)
 {
     //in inturrupt
+    if (hfp_with_xiaozhi)
+    {
+        return RT_EOK;
+    }
     audio_server_t *server = get_server();
     //rt_kprintf("-tx done\n");
     process_speaker_tx(server, &server->device_speaker_private);
@@ -3009,6 +3019,10 @@ static rt_err_t speaker_tx_done(rt_device_t dev, void *buffer)
 static rt_err_t mic_rx_ind(rt_device_t dev, rt_size_t size)
 {
     //in inturrupt
+    if (hfp_with_xiaozhi)
+    {
+        return RT_EOK;
+    }
     rt_event_send(&g_server.event, AUDIO_SERVER_EVENT_RX);
     return RT_EOK;
 }
@@ -4082,6 +4096,13 @@ AUDIO_API void bt_tx_event_to_audio_server()
 
 int audio_server_select_public_audio_device(audio_device_e device_type)
 {
+    if (device_type == AUDIO_DEVICE_XIAOZHI)
+    {
+        hfp_with_xiaozhi = 1;
+        return 0;
+    }
+    hfp_with_xiaozhi = 0;
+
     if (device_type >= AUDIO_DEVICE_NUMBER || !g_server.is_server_inited)
     {
         return -1;

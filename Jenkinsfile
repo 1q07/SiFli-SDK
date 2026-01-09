@@ -1,5 +1,5 @@
 pipeline {
-   agent { label 'sdk' }
+    agent { label 'sdk' }
     stages {
         stage('Print CI Info') {
             steps {
@@ -41,6 +41,13 @@ pipeline {
                     steps {
                         bat'''
                         tools\\autotest\\build.bat example\\ble\\central_and_peripheral\\project\\hcpu --board eh-lb551_hcpu
+                        '''
+                    }
+                } 
+                stage('Copyright Check') {
+                    steps {
+                        bat'''
+                        tools\\autotest\\copyright_check.bat
                         '''
                     }
                 } 

@@ -1,0 +1,27 @@
+license:
+  main: apache-2.0
+  additional: 
+    - MIT
+  report_invalid: true
+  report_unknown: true
+  report_missing: true
+  category: Permissive
+copyright:
+  check: true
+exclude:
+  extensions:
+    - yml
+    - yaml
+    - html
+    - rst
+    - conf
+    - cfg
+    - config
+    - bat
+  special_file:
+    - SConscript
+    - SConstruct
+    - Kconfig
+    - rtconfig.h
+  langs:
+    - HTML

@@ -11,7 +11,7 @@
 
 | 命令                                                   | 说明             |
 | ------------------------------------------------------ | ---------------- |
-| `sdk.py sf-pkg-login -n <用户名> -t <令牌>`            | 登录 sf-pkg 系统 |
+| `sdk.py sf-pkg-login -u <用户名> -t <令牌>`            | 登录 sf-pkg 系统 |
 | `sdk.py sf-pkg-new --name <包名>`                      | 创建新的包配置   |
 | `sdk.py sf-pkg-build --version <版本号>`               | 构建包           |
 | `sdk.py sf-pkg-upload --name <包名>/<版本号>@<用户名>` | 上传包到服务器   |

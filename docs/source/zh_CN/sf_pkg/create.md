@@ -20,7 +20,7 @@
 ## 登录 sf-pkg
 
 ```bash
-sdk.py sf-pkg-login -n <小写的GitHub用户名> -t 获取的 token
+sdk.py sf-pkg-login -u <小写的GitHub用户名> -t 获取的 token
 ```
 
 ![登录成功](./assert/sdk-pkg-login.png)
@@ -90,7 +90,7 @@ class Example_AddRecipe(ConanFile):
 - `user`：在 `https://packages.sifli.com` 上的用户名，也叫`namespace`，必选项。
 - `license`：开源协议，常见的有 `Apache-2.0`、`MIT`、`GPL-3.0`、`BSD-3-Clause` 等，默认是 `Apache-2.0`。
 - `author`：包作者/维护者名称，可选项。
-- `url`：包的仓库地址 (GitHub/GitLab 等），可选项。
+- `url`：包的仓库地址 （GitHub/GitLab 等），可选项。
 - `description`：包的详细描述，可选项。
 - `topics`：包的标签/主题，便于搜索和分类，使用元组形式，可选项。
 - `support_sdk_version`：支持的 SiFli-SDK 版本，必选项，格式为 [语义化版本范围](https://semver.org/)。
