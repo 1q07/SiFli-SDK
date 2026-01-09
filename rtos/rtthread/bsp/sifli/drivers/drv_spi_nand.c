@@ -598,6 +598,11 @@ int rt_nand_init()
         rt_kprintf("NAND ID 0x%x\n", spi_nand_handle.dev_id);
         nand_pagesize = HAL_NAND_PAGE_SIZE(&spi_nand_handle.handle);
         nand_blksize = HAL_NAND_BLOCK_SIZE(&spi_nand_handle.handle);
+        if(spi_nand_handle.dev_id == 0xb034b0)
+        {
+            nand_pagesize = 4096;
+            nand_blksize = 0x80000;   
+        }
 
 #ifndef CFG_BOOTLOADER
         if (gnand_cache_buf == NULL)
