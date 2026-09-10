@@ -1,4 +1,4 @@
-/*
+﻿/*
  * SPDX-FileCopyrightText: 2020-2026 SiFli Technologies(Nanjing) Co., Ltd
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -9,6 +9,39 @@
 
 #include "anyka_types.h"
 #include "medialib_global.h"
+
+// Generic helper definitions for shared library support
+#if defined _WIN32 || defined __CYGWIN__
+    #define SD_HELPER_DLL_IMPORT __declspec(dllimport)
+    #define SD_HELPER_DLL_EXPORT __declspec(dllexport)
+    #define SD_HELPER_DLL_LOCAL
+#else
+    #if __GNUC__ >= 4
+        #define SD_HELPER_DLL_IMPORT __attribute__ ((visibility ("default")))
+        #define SD_HELPER_DLL_EXPORT __attribute__ ((visibility ("default")))
+        #define SD_HELPER_DLL_LOCAL  __attribute__ ((visibility ("hidden")))
+    #else
+        #define SD_HELPER_DLL_IMPORT
+        #define SD_HELPER_DLL_EXPORT
+        #define SD_HELPER_DLL_LOCAL
+    #endif
+#endif
+
+// Now we use the generic helper definitions above to define SD_API and SD_LOCAL.
+// SD_API is used for the public API symbols. It either DLL imports or DLL exports (or does nothing for static build)
+// SD_LOCAL is used for non-api symbols.
+
+#ifdef SD_DLL // defined if sdlib is compiled as a DLL
+    #ifdef SD_BUILD_DLL // defined if we are building the sdlib DLL (instead of using it)
+        #define SD_API SD_HELPER_DLL_EXPORT
+    #else
+        #define SD_API SD_HELPER_DLL_IMPORT
+    #endif // SD_BUILD_DLL
+    #define SD_LOCAL SD_HELPER_DLL_LOCAL
+#else // SD_DLL is not defined: this means sdlib is a static lib.
+    #define SD_API
+    #define SD_LOCAL
+#endif // SD_DLL
 
 #ifdef __cplusplus
 extern "C" {
@@ -105,7 +138,7 @@ typedef struct sdlib_platform_dependent_list
     const T_SDLIB_FFTDRV_OP                    *fftdrv_op;
 } T_SDLIB_PLATFORM_DEPENDENT_LIST;
 
-T_SDLIB_PLATFORM_DEPENDENT_LIST *_SD_GetPlatformDependentList(T_VOID);
+SD_API T_SDLIB_PLATFORM_DEPENDENT_LIST *_SD_GetPlatformDependentList(T_VOID);
 
 /* ------ sub module interface ------ */
 
@@ -117,6 +150,16 @@ struct sd_entry_fft
     void (*fft)(void *handle, T_S16 *in, T_S16 *out);      // forward fft
     void (*ifft)(void *handle, T_S16 *in, T_S16 *out);     // inverse fft
 };
+
+extern SD_API const struct sd_entry_fft c_sd_spx_fft;
+extern SD_API const struct sd_entry_fft c_sd_spx_fft_f1;
+extern SD_API const struct sd_entry_fft c_sd_spx_fftc;
+extern SD_API const struct sd_entry_fft c_sd_ak_fft_asm;
+extern SD_API const struct sd_entry_fft c_sd_ak_fft_asm_f1;
+extern SD_API const struct sd_entry_fft c_sd_ak_fftc_asm;
+extern SD_API const struct sd_entry_fft c_sd_ak_fft_c;
+extern SD_API const struct sd_entry_fft c_sd_ak_fft_c_f1;
+extern SD_API const struct sd_entry_fft c_sd_ak_fftc_c;
 
 #ifdef __cplusplus
 }

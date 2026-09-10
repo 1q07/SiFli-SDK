@@ -144,14 +144,28 @@ __STATIC_INLINE uint32_t HAL_DBG_DWT_GetCycles(void)
 
 /**
  * @brief  Trigger breakpoint on RAM content change.
+ * @param[in] addr Address to monitor.
+ * @param[in] size Size of data to monitor, 0: 1 byte, 1: 2 bytes, 2: 4 bytes.
  * @retval  None
  */
-__STATIC_INLINE void HAL_DBG_DWT_Trigger(uint32_t addr)
+__STATIC_INLINE void HAL_DBG_DWT_Trigger(uint32_t addr, uint32_t size)
 {
-    // TODO: Revisit to verify.
     DWT->COMP3 = addr;
-    DWT->FUNCTION3 &= ~DWT_FUNCTION_MATCH_Msk;
-    DWT->FUNCTION3 |= 0x15;
+    DWT->FUNCTION3 = (5 << DWT_FUNCTION_MATCH_Pos)   // Watchpoint on data value change(4: value change or read, 5: value change, 6: value read)
+                     | (size << DWT_FUNCTION_DATAVSIZE_Pos) // data size(0: one byte, 1: halfword(two bytes), 2: word(four bytes), 3: reserved)
+                     | (1 << DWT_FUNCTION_ACTION_Pos) // Generate debug event
+                     ;
+}
+
+__STATIC_INLINE void HAL_DBG_DWT_RstTrigger(void)
+{
+    DWT->FUNCTION3 = 0;
+}
+
+
+__STATIC_INLINE uint32_t HAL_DBG_DWT_GetTriggerAddr(void)
+{
+    return DWT->COMP3;
 }
 
 #endif /* DWT */
@@ -220,8 +234,7 @@ __STATIC_INLINE bool HAL_LOCK_Write8(volatile uint8_t *addr, uint8_t value)
     return (__STREXB(value, addr) == 0) ? true : false;
 }
 
-#endif
-
+#endif /* !WIN32 */
 
 
 
@@ -253,11 +266,15 @@ typedef enum
   * @{
   */
 #define RTC_BACKUP_BOOTOPT_SRC_Pos 0U
-#define RTC_BACKUP_BOOTOPT_SRC_Msk (0xFUL << RTC_BACKUP_BOOTOPT_BOOT_SRC_Pos)
+#define RTC_BACKUP_BOOTOPT_SRC_Msk (0xFUL << RTC_BACKUP_BOOTOPT_SRC_Pos)
 #define RTC_BACKUP_BOOTOPT_PD_DELAY_Pos 4U
 #define RTC_BACKUP_BOOTOPT_PD_DELAY_Msk (0xFFUL << RTC_BACKUP_BOOTOPT_PD_DELAY_Pos)
 #define RTC_BACKUP_BOOTOPT_PU_DELAY_Pos 12U
 #define RTC_BACKUP_BOOTOPT_PU_DELAY_Msk (0xFFFUL << RTC_BACKUP_BOOTOPT_PU_DELAY_Pos)
+/** delay time after sending cmd 99H for NOR Flash Reset, unit: 100us */
+#define RTC_BACKUP_BOOTOPT_NOR_RESET_DELAY_Pos 24U
+#define RTC_BACKUP_BOOTOPT_NOR_RESET_DELAY_Msk (0xFFUL << RTC_BACKUP_BOOTOPT_NOR_RESET_DELAY_Pos)
+
 /**
   * @}
   */
